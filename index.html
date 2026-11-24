@@ -1,0 +1,1072 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Matriz 3D interativa que situa decisões humanas por tipo, volatilidade e contexto, com as redes cerebrais envolvidas.">
+<style>
+  :root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  body { margin: 0; font: 14px/1.5 system-ui, sans-serif; }
+  img { max-width: 100%; }
+  [hidden] { display: none !important; }
+</style>
+<title>Matriz da Decisão Humana</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400..700;1,400..600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one wide horizontal stage (the cube); clicking a sphere focuses it and opens a detail sheet over the right side of the stage. Below, a thin strip of filters and shortcuts. */
+:root {
+  --paper: #F3EEE4;
+  --surface: #FBF8F2;
+  --ink: #1A2233;
+  --ink-soft: #4E5668;
+  --line: #CFC5B2;
+  --grid: #E2D9C8;
+  --accent: #A8630F;
+  --accent-bright: #E8A33D;
+  --g-lab: #3D6C9C;
+  --g-vida: #4F8550;
+  --g-tcc: #D6802A;
+  --focus: #3D6C9C;
+  --brain: #F3DCDA;
+  --brain-dk: #E6C2C0;
+  --brain-line: #96605F;
+  --stem: #F1E6C3;
+  --stem-line: #A28A55;
+  --cc: #FBF4EE;
+  --ax-x: #1F8A4C;
+  --ax-y: #C23B2E;
+  --ax-z: #2D63B8;
+  --display: 'Crimson Pro', 'Times New Roman', Georgia, serif;
+  --body: 'IBM Plex Sans', 'Segoe UI', Arial, sans-serif;
+  --mono: 'IBM Plex Mono', 'Courier New', monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0F1420; --surface: #171E2D; --ink: #EDE7DA; --ink-soft: #A9B1C2;
+    --line: #34405A; --grid: #222B3D; --accent: #E8A33D; --accent-bright: #F0B458;
+    --g-lab: #7FA8D6; --g-vida: #8DBB86; --g-tcc: #F0A848; --focus: #9DBDE3;
+    --brain: #3C2D34; --brain-dk: #4B3842; --brain-line: #B9929B; --stem: #403A2A; --stem-line: #A8925E; --cc: #5A4950;
+    --ax-x: #5CCB8A; --ax-y: #FF6F61; --ax-z: #74A9FF;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0F1420; --surface: #171E2D; --ink: #EDE7DA; --ink-soft: #A9B1C2;
+  --line: #34405A; --grid: #222B3D; --accent: #E8A33D; --accent-bright: #F0B458;
+  --g-lab: #7FA8D6; --g-vida: #8DBB86; --g-tcc: #F0A848; --focus: #9DBDE3;
+  --brain: #3C2D34; --brain-dk: #4B3842; --brain-line: #B9929B; --stem: #403A2A; --stem-line: #A8925E; --cc: #5A4950;
+  --ax-x: #5CCB8A; --ax-y: #FF6F61; --ax-z: #74A9FF;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 36px;
+}
+.wrap { max-width: 1480px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 8px 32px; }
+.titles { display: flex; flex-direction: column; gap: 4px; }
+.eyebrow { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); font-weight: 600; margin: 0; }
+h1 { font-family: var(--display); font-weight: 500; font-size: clamp(32px, 4.4vw, 50px); line-height: 1.02; margin: 0; text-wrap: balance; }
+.lede { margin: 0; color: var(--ink-soft); font-size: 15px; max-width: 62ch; }
+
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.btn {
+  font: 500 13px/1 var(--body); color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 999px; padding: 9px 14px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px; text-decoration: none;
+}
+.btn:hover { border-color: var(--ink-soft); }
+.btn[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.btn:focus-visible, canvas:focus-visible, .chip:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.spacer { flex: 1; }
+.lang { display: inline-flex; }
+.lang .btn { border-radius: 0; padding: 9px 12px; font-weight: 600; }
+.lang .btn:first-child { border-radius: 999px 0 0 999px; }
+.lang .btn:last-child { border-radius: 0 999px 999px 0; border-left: none; }
+.zoom { display: inline-flex; }
+.zoom .btn { border-radius: 0; padding: 9px 12px; }
+.zoom .btn:first-child { border-radius: 999px 0 0 999px; }
+.zoom .btn:last-child { border-radius: 0 999px 999px 0; border-left: none; }
+
+.stage {
+  position: relative; width: 100%; height: clamp(520px, 76vh, 860px);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+}
+.stage:fullscreen { border-radius: 0; height: 100%; border: 0; }
+canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+canvas.dragging { cursor: grabbing; }
+.zoomctl { position: absolute; right: 12px; bottom: 12px; display: flex; flex-direction: column; z-index: 1; box-shadow: 0 4px 14px rgba(0,0,0,.12); border-radius: 12px; }
+.zoomctl .btn { width: 40px; height: 40px; justify-content: center; padding: 0; font-size: 20px; border-radius: 0; }
+.zoomctl .btn:first-child { border-radius: 12px 12px 0 0; }
+.zoomctl .btn:last-child { border-radius: 0 0 12px 12px; border-top: none; }
+.stage:has(.sheet:not([hidden])) .zoomctl { right: calc(min(460px, 42%) + 24px); }
+.credit { border-top: 1px solid var(--line); padding-top: 14px; display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: var(--ink-soft); }
+.credit p { margin: 0; }
+.credit b { color: var(--ink); font-weight: 600; }
+.credit a { color: var(--accent); }
+.credit .profiles { display: flex; flex-wrap: wrap; gap: 4px 8px; margin-top: 4px; }
+@media (max-width: 860px) { .stage:has(.sheet:not([hidden])) .zoomctl { right: 12px; } }
+.hint { position: absolute; left: 14px; bottom: 12px; font-size: 12px; color: var(--ink-soft); pointer-events: none; margin: 0; }
+.tip {
+  position: absolute; pointer-events: none; background: var(--ink); color: var(--paper);
+  border-radius: 8px; padding: 8px 10px; font-size: 12.5px; max-width: 260px; z-index: 3;
+  box-shadow: 0 6px 18px rgba(0,0,0,.18);
+}
+.tip strong { display: block; font-family: var(--display); font-size: 17px; font-weight: 600; line-height: 1.15; margin-bottom: 4px; }
+.tip span { display: block; font-family: var(--mono); font-size: 11.5px; opacity: .85; }
+
+/* detail sheet */
+.sheet {
+  position: absolute; top: 12px; right: 12px; bottom: 12px; width: min(460px, 42%);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  box-shadow: 0 18px 50px rgba(0,0,0,.22); overflow-y: auto; z-index: 2;
+  display: flex; flex-direction: column;
+}
+.sheet[hidden] { display: none; }
+.sheet-in { padding: 18px 20px 22px; display: flex; flex-direction: column; gap: 16px; }
+.sheet-top { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+.sheet h2 { font-family: var(--display); font-weight: 600; font-size: 30px; line-height: 1.05; margin: 4px 0 0; text-wrap: balance; }
+.grp { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); }
+.x { flex: none; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: var(--paper); color: var(--ink); font-size: 18px; line-height: 1; cursor: pointer; }
+.x:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.figure { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.figure svg { width: 100%; height: auto; display: block; border-radius: 10px; border: 1px solid var(--line); }
+.figure figcaption { font-size: 12px; color: var(--ink-soft); }
+.desc { margin: 0; font-size: 15px; }
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.stat { background: var(--paper); border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.stat b { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft); font-weight: 600; }
+.stat span { font-family: var(--display); font-size: 18px; line-height: 1.15; }
+.sec-t { font-family: var(--display); font-size: 21px; font-weight: 600; margin: 0; }
+.areas { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.areas li { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--grid); }
+.areas li:last-child { border-bottom: 0; }
+.areas .nm { min-width: 0; }
+.areas .nm b { font-family: var(--mono); font-size: 12.5px; color: var(--accent); font-weight: 500; margin-right: 6px; }
+.areas a { font-size: 12.5px; color: var(--g-lab); white-space: nowrap; }
+.nav { display: flex; gap: 8px; justify-content: space-between; }
+.small { font-size: 12px; color: var(--ink-soft); margin: 0; }
+
+/* brain figure */
+.brain text { font-family: var(--body); font-size: 10.5px; fill: var(--ink); font-weight: 600; }
+.brain .vt { font-family: var(--display); font-style: italic; font-size: 13px; fill: var(--ink-soft); font-weight: 400; }
+.brain .out.cbl, .brain .out.stem { fill: var(--grid); }
+.brain .sul.main { stroke: var(--ink-soft); stroke-width: 1.5; opacity: .75; }
+.brain .sul2 { fill: none; stroke: var(--line); stroke-width: 1; opacity: .7; }
+.brain .fol { fill: none; stroke: var(--ink-soft); stroke-width: .9; opacity: .55; }
+.brain .cc { fill: var(--grid); stroke: var(--ink-soft); stroke-width: 1; opacity: .9; }
+.brain .thal { fill: var(--grid); stroke: var(--line); stroke-width: 1; }
+.brain .lobe { font-family: var(--display); font-style: italic; font-size: 12px; font-weight: 500; fill: var(--ink); opacity: .8; paint-order: stroke; stroke: var(--brain); stroke-width: 3px; }
+.brain .ctx { fill: var(--brain); stroke: var(--brain-line); stroke-width: 1.6; }
+.brain .gyr { fill: none; stroke: var(--brain-line); stroke-width: 1.3; opacity: .85; stroke-linecap: round; stroke-linejoin: round; }
+.brain .sulc { fill: none; stroke: var(--brain-line); stroke-width: 2; stroke-linecap: round; }
+.brain .cblf { fill: var(--brain-dk); }
+.brain .cbl-edge { fill: none; stroke: var(--brain-line); stroke-width: 1.5; }
+.brain .fol { fill: none; stroke: var(--brain-line); stroke-width: .8; opacity: .8; }
+.brain .arb { fill: none; stroke: var(--brain-line); stroke-width: 1.2; stroke-linecap: round; }
+.brain .stemf { fill: var(--stem); stroke: var(--stem-line); stroke-width: 1.4; }
+.brain .stl { fill: none; stroke: var(--stem-line); stroke-width: 1; opacity: .8; }
+.brain .cing { fill: var(--brain-dk); stroke: var(--brain-line); stroke-width: 1.2; }
+.brain .ccf { fill: var(--cc); stroke: var(--brain-line); stroke-width: 1.3; }
+.brain .thal { fill: var(--brain-dk); stroke: var(--brain-line); stroke-width: 1; }
+.brain .vh { font-family: var(--display); font-size: 20px; font-weight: 600; fill: var(--ink); }
+.brain .out { fill: var(--paper); stroke: var(--ink-soft); stroke-width: 1.4; }
+.brain .sul { fill: none; stroke: var(--line); stroke-width: 1.3; }
+.brain .reg { fill: var(--line); opacity: .45; }
+.brain .reg.deep { fill: none; stroke: var(--line); stroke-dasharray: 3 3; opacity: .9; }
+.brain .on { fill: var(--accent-bright); opacity: .9; }
+.brain .on.deep { fill: var(--accent-bright); stroke: var(--accent); stroke-dasharray: 3 2; stroke-width: 1.2; opacity: .85; }
+.brain .halo { fill: var(--accent-bright); opacity: .22; }
+
+/* situation illustrations */
+.ill .bg { fill: var(--paper); }
+.ill .soft { fill: var(--grid); }
+.ill .card { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+.ill .ln { fill: none; stroke: var(--ink); stroke-width: 2; }
+.ill .lns { fill: none; stroke: var(--ink-soft); stroke-width: 1.5; }
+.ill .ink { fill: var(--ink); }
+.ill .mut { fill: var(--ink-soft); }
+.ill .acc { fill: var(--accent-bright); }
+.ill .accs { fill: none; stroke: var(--accent); stroke-width: 2.5; }
+.ill .lab { fill: var(--g-lab); }
+.ill .vida { fill: var(--g-vida); }
+.ill text { font-family: var(--body); fill: var(--ink); font-size: 12px; }
+.ill .t-big { font-family: var(--display); font-size: 20px; font-weight: 600; }
+.ill .t-mut { fill: var(--ink-soft); font-size: 11px; }
+
+/* bottom strip */
+.strip { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: start; }
+.strip-g { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.strip-g h3 { margin: 0; font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); font-weight: 600; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 7px; font: 500 12.5px/1 var(--body);
+  padding: 7px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer;
+}
+.chip[aria-pressed="false"] { opacity: .45; }
+.chip[aria-pressed="false"] .dot { background: transparent !important; }
+.chip[aria-current="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.dot { width: 11px; height: 11px; border-radius: 50%; border: 2px solid currentColor; flex: none; }
+details { font-size: 13.5px; }
+summary { cursor: pointer; color: var(--ink-soft); font-weight: 600; font-size: 12.5px; letter-spacing: .04em; }
+.gloss { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 4px 18px; margin: 10px 0 0; }
+.gloss div { display: flex; gap: 8px; }
+.gloss dt { font-family: var(--mono); font-size: 12px; color: var(--accent); min-width: 52px; padding-top: 1px; }
+.gloss dd { margin: 0; }
+.note { font-size: 12.5px; color: var(--ink-soft); margin: 0; max-width: 110ch; }
+
+@media (max-width: 860px) {
+  .stage { height: 460px; }
+  .sheet { position: static; width: auto; box-shadow: none; overflow: visible; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="titles">
+      <p class="eyebrow" data-i18n>Neurociência da decisão · Ferramenta de apresentação</p>
+      <h1 data-i18n>Matriz da Decisão Humana</h1>
+    </div>
+    <p class="lede" data-i18n>Posição = tipo, volatilidade e contexto da decisão. Tamanho da esfera = custo cognitivo (pequena, rápida; grande, lenta e custosa). Clique numa esfera para ver a rede cerebral envolvida.</p>
+  </header>
+
+  <div class="toolbar" role="toolbar" aria-label="Controles da matriz" data-i18n-aria>
+    <button class="btn" id="b-auto" type="button" data-i18n aria-pressed="true">Girar sozinho</button>
+    <button class="btn" id="b-labels" type="button" data-i18n aria-pressed="true">Rótulos</button>
+    <button class="btn" id="b-areas" type="button" data-i18n aria-pressed="true">Áreas cerebrais</button>
+    <button class="btn" id="b-zone" type="button" data-i18n aria-pressed="false">Zona de interesse</button>
+    <button class="btn" id="b-reset" type="button" data-i18n>Vista inicial</button>
+    <button class="btn" id="b-front" type="button" data-i18n>Vista frontal</button>
+    <span class="spacer"></span>
+    <span class="lang" role="group" aria-label="Idioma / Language"><button class="btn" type="button" data-lang="pt" lang="pt">PT</button><button class="btn" type="button" data-lang="en" lang="en">EN</button></span>
+    <button class="btn" id="b-full" type="button" data-i18n>Tela cheia</button>
+  </div>
+
+  <div class="stage" id="stage">
+    <canvas id="cv" tabindex="0" data-i18n-aria aria-label="Matriz tridimensional de tomada de decisão. Use as setas do teclado para girar e Esc para fechar o detalhe."></canvas>
+    <div class="tip" id="tip" hidden></div>
+    <div class="zoomctl" role="group" aria-label="Zoom"><button class="btn" id="b-zin" type="button" data-i18n-aria aria-label="Aproximar">+</button><button class="btn" id="b-zout" type="button" data-i18n-aria aria-label="Afastar">−</button></div>
+    <p class="hint" id="hint" data-i18n>Arraste para girar · role para dar zoom · clique numa esfera para focar</p>
+    <section class="sheet" id="sheet" hidden aria-live="polite"></section>
+  </div>
+
+  <div class="strip">
+    <div class="strip-g">
+      <h3 data-i18n>Grupos</h3>
+      <div class="chips" id="chips"></div>
+    </div>
+    <div class="strip-g" style="flex:1">
+      <h3 data-i18n>Ir para</h3>
+      <div class="chips" id="jump"></div>
+    </div>
+  </div>
+  <details>
+    <summary data-i18n>Siglas das áreas cerebrais</summary>
+    <dl class="gloss" id="gloss"></dl>
+  </details>
+  <p class="note" data-i18n>Posições, tamanhos e áreas são estimativas qualitativas para fins de apresentação, baseadas em associações frequentes na literatura de neuroimagem. Uma área ativa não identifica sozinha um processo mental (inferência reversa). As imagens das situações são ilustrações esquemáticas.</p>
+  <footer class="credit">
+    <p data-i18n-html="credit1">Desenvolvido por <b>Guilherme da Silva Freitas</b> em outubro de 2026, como parte do Trabalho de Conclusão de Curso em Psicologia na Universidade Federal do Rio Grande do Sul (UFRGS).</p>
+    <p data-i18n-html="credit2">Contato: <a href="mailto:guilherme.f@ufrgs.br">guilherme.f@ufrgs.br</a></p>
+    <p class="profiles">
+      <a href="https://orcid.org/0009-0004-4002-3175" target="_blank" rel="noopener">ORCID</a>
+      <span aria-hidden="true">·</span>
+      <a href="https://scholar.google.com.br/citations?user=Xoe5Ow4AAAAJ&amp;hl=pt-BR" target="_blank" rel="noopener">Google Scholar</a>
+      <span aria-hidden="true">·</span>
+      <a href="http://lattes.cnpq.br/7171331289749820" target="_blank" rel="noopener" data-i18n>Currículo Lattes</a>
+    </p>
+  </footer>
+</div>
+
+<script>
+(() => {
+  const EN = {"Zona de interesse": "Zone of interest", "valor · social · ambígua": "value · social · ambiguous", "TAMANHO = CUSTO COGNITIVO": "SIZE = COGNITIVE COST", "rápido": "fast", "lento, custoso": "slow, costly", "Rápido, pouco custo": "Fast, low cost", "Custo moderado": "Moderate cost", "Lento, alto custo": "Slow, high cost", "Tipo": "Type", "Volatilidade": "Volatility", "Contexto": "Context", "Custo": "Cost", "Áreas": "Areas", "Custo cognitivo": "Cognitive cost", "lobo frontal": "frontal lobe", "lobo parietal": "parietal lobe", "occipital": "occipital", "lobo temporal": "temporal lobe", "cerebelo": "cerebellum", "tronco · bulbo": "brainstem · medulla", "giro do cíngulo": "cingulate gyrus", "corpo caloso": "corpus callosum", "tálamo": "thalamus", "ponte": "pons", "← frente": "← front", "Vista lateral (hemisfério esquerdo)": "Lateral view (left hemisphere)", "Vista medial (corte sagital)": "Medial view (sagittal section)", "Vista lateral": "Lateral view", "Vista medial": "Medial view", "do cérebro com destaque para": "of the brain, highlighting", "Frear ou passar?": "Brake or go?", "~300 ms para decidir": "~300 ms to decide", "Para que lado os pontos se movem?": "Which way are the dots moving?", "← tecla F": "← F key", "tecla J →": "J key →", "Concordou?": "Agreed?", "Escolha um baralho": "Pick a deck", "Saldo: R$ 2.000 · as regras não são informadas": "Balance: $2,000 · the rules are not disclosed", "Urna A: 50 / 50": "Urn A: 50 / 50", "Urna B: proporção ?": "Urn B: ratio ?", "Em qual urna você aposta?": "Which urn do you bet on?", "Proposta do outro jogador": "The other player's offer", "Você: R$ 2 · Ele: R$ 8": "You: $2 · Them: $8", "Aceitar": "Accept", "Recusar": "Reject", "Time A × Time B": "Team A × Team B", "Final · hoje, 21h": "Final · tonight, 9 pm", "Vitória A": "A wins", "Empate": "Draw", "Vitória B": "B wins", "Empresa": "Company", "Pesquisa": "Research", "Empreender": "Start a business", "Qual caminho?": "Which path?", "Decisão difícil de reverter": "Hard to reverse", "Investir tudo ou manter o que funciona?": "Go all in or keep what works?", "Fechar detalhe": "Close details", "Ilustração": "Illustration", "Ilustração esquemática da situação": "Schematic illustration of the situation", "Rede cerebral envolvida": "Brain network involved", "Saiba mais ↗": "Learn more ↗", "Regiões profundas aparecem tracejadas. Links abrem a Wikipédia (em inglês).": "Deep regions are shown dashed. Links open Wikipedia.", "Neurociência da decisão · Ferramenta de apresentação": "Decision neuroscience · Presentation tool", "Matriz da Decisão Humana": "Human Decision Matrix", "Posição = tipo, volatilidade e contexto da decisão. Tamanho da esfera = custo cognitivo (pequena, rápida; grande, lenta e custosa). Clique numa esfera para ver a rede cerebral envolvida.": "Position = the decision's type, volatility and context. Sphere size = cognitive cost (small, fast; large, slow and costly). Click a sphere to see the brain network involved.", "Girar sozinho": "Auto-rotate", "Rótulos": "Labels", "Áreas cerebrais": "Brain areas", "Vista inicial": "Reset view", "Vista frontal": "Front view", "Tela cheia": "Full screen", "Arraste para girar · role para dar zoom · clique numa esfera para focar": "Drag to rotate · scroll to zoom · click a sphere to focus", "Grupos": "Groups", "Ir para": "Go to", "Siglas das áreas cerebrais": "Brain area abbreviations", "Posições, tamanhos e áreas são estimativas qualitativas para fins de apresentação, baseadas em associações frequentes na literatura de neuroimagem. Uma área ativa não identifica sozinha um processo mental (inferência reversa). As imagens das situações são ilustrações esquemáticas.": "Positions, sizes and areas are qualitative estimates for presentation purposes, based on associations frequently reported in the neuroimaging literature. An active area alone does not identify a mental process (reverse inference). The situation images are schematic illustrations.", "Controles da matriz": "Matrix controls", "Aproximar": "Zoom in", "Afastar": "Zoom out", "Currículo Lattes": "Lattes CV", "Matriz tridimensional de tomada de decisão. Use as setas do teclado para girar e Esc para fechar o detalhe.": "Three-dimensional decision-making matrix. Use the arrow keys to rotate and Esc to close the details."};
+  const EN_HTML = {"credit1": "Developed by <b>Guilherme da Silva Freitas</b> in October 2026 as part of his undergraduate thesis (TCC) in Psychology at the Federal University of Rio Grande do Sul (UFRGS), Brazil.", "credit2": "Contact: <a href=\"mailto:guilherme.f@ufrgs.br\">guilherme.f@ufrgs.br</a>"};
+  const DATA_EN = {"groups": {"lab": "Lab task", "vida": "Real-world decision", "tcc": "Thesis focus"}, "axes": {"x": {"title": "Decision type", "lo": "Perceptual", "mid": "Mixed", "hi": "Value-based / economic"}, "y": {"title": "Volatility", "lo": "Low", "mid": "Medium", "hi": "High / ambiguous"}, "z": {"title": "Context", "lo": "Individual", "mid": "Mixed", "hi": "Social"}}, "items": {"semaforo": ["Yellow traffic light", "Brake or go? A fast, individual perceptual decision with clear rules. Largely automated by habit and supported by the basal ganglia."], "rdm": ["Moving dots", "Classic lab task: decide which way the dots are moving. MT/V5 encodes motion and LIP accumulates evidence up to a threshold (Gold & Shadlen)."], "expressoes": ["Reading faces in a meeting", "Interpreting ambiguous social signals in real time. Faces are processed in the fusiform area; the amygdala flags emotional relevance and the STS reads intentions from facial movement."], "iowa": ["Iowa Gambling Task", "Choosing between decks with uncertain gains and losses. Basis of the somatic marker hypothesis: the vmPFC integrates bodily signals to guide choices (Bechara & Damasio)."], "ellsberg": ["Ellsberg urn", "Betting on an urn with known or unknown odds. Ambiguity recruits the amygdala and OFC; known risk recruits the striatum more (Hsu et al., 2005)."], "ultimato": ["Ultimatum Game", "Accepting or rejecting a split of money. Unfair offers activate the anterior insula; the dlPFC sustains the economic goal and the ACC signals the conflict (Sanfey et al., 2003)."], "aposta": ["Sports betting", "Weighing odds and payoff with partial information. Anticipating a gain involves the ventral striatum; the insula responds to the risk of loss."], "carreira": ["Career choice", "A long-term decision that is costly to reverse. It requires simulating possible futures (hippocampus), comparing distant alternatives (frontopolar cortex) and integrating values (vmPFC)."], "acoes": ["Stock trading", "Value at stake, a volatile market and decisions shaped by what others will do. Inferring other investors' intentions recruits the dmPFC (De Martino et al., 2013)."], "diretoria": ["Strategic board decision", "High risk, little information, many stakeholders and consequences that are hard to reverse. The OFC is central to counterfactual regret (Camille et al., 2004; Coricelli et al., 2005); the TPJ helps anticipate how others will react. This is where the thesis looks for evidence."]}, "reg": {"dlpfc": ["dlPFC", "Dorsolateral prefrontal cortex"], "vmpfc": ["vmPFC", "Ventromedial prefrontal cortex"], "dmpfc": ["dmPFC", "Dorsomedial prefrontal cortex"], "ofc": ["OFC", "Orbitofrontal cortex"], "acc": ["ACC", "Anterior cingulate cortex"], "fpc": ["FPC", "Frontopolar cortex"], "insula": ["Insula", "Insular cortex"], "amy": ["Amygdala", "Amygdala"], "str": ["Striatum", "Striatum (incl. ventral striatum / nucleus accumbens)"], "bg": ["Basal ganglia", "Basal ganglia"], "hipp": ["Hippocampus", "Hippocampus"], "tpj": ["TPJ", "Temporoparietal junction"], "sts": ["STS", "Superior temporal sulcus"], "ffa": ["FFA", "Fusiform face area"], "mt": ["MT/V5", "Visual motion area (MT/V5)"], "lip": ["LIP", "Lateral intraparietal area"], "fef": ["FEF", "Frontal eye field"], "pmc": ["PMC", "Premotor cortex"], "v1": ["V1/V4", "Primary visual cortex and color/form areas"]}};
+  let lang = 'pt';
+  try { const v = localStorage.getItem('matriz-lang'); lang = v === 'en' || v === 'pt' ? v : (/^pt/i.test(navigator.language || '') ? 'pt' : 'en'); } catch (e) { lang = /^pt/i.test(navigator.language || '') ? 'pt' : 'en'; }
+  const t = s => lang === 'en' ? (EN[s] ?? s) : s;
+  const GROUPS = {
+    lab:  { name: 'Tarefa de laboratório', token: '--g-lab' },
+    vida: { name: 'Decisão do mundo real', token: '--g-vida' },
+    tcc:  { name: 'Foco do TCC', token: '--g-tcc' },
+  };
+  const AXES = {
+    x: { title: 'Tipo de decisão', lo: 'Perceptual', mid: 'Misto', hi: 'Baseada em valor / econômica' },
+    y: { title: 'Volatilidade', lo: 'Baixa', mid: 'Média', hi: 'Alta / ambígua' },
+    z: { title: 'Contexto', lo: 'Individual', mid: 'Misto', hi: 'Social' },
+  };
+  // c = custo cognitivo (0 rápido, 1 lento). r = regiões (chaves do mapa REG).
+  const ITEMS = [
+    { id: 'semaforo', name: 'Semáforo amarelo', g: 'vida', x: .08, y: .12, z: .08, c: .1, r: ['v1', 'pmc', 'bg'],
+      d: 'Frear ou passar? Decisão perceptual rápida, individual e com regras claras. Em grande parte automatizada pelo hábito, apoiada nos gânglios da base.', fig: 'semaforo' },
+    { id: 'rdm', name: 'Pontos em movimento', g: 'lab', x: .14, y: .42, z: .06, c: .25, r: ['mt', 'lip', 'fef'],
+      d: 'Tarefa clássica de laboratório: decidir para que lado os pontos se movem. A MT/V5 codifica o movimento e a LIP acumula evidência até um limiar (Gold & Shadlen).', fig: 'rdm' },
+    { id: 'expressoes', name: 'Ler expressões numa reunião', g: 'vida', x: .24, y: .55, z: .86, c: .4, r: ['ffa', 'amy', 'sts'],
+      d: 'Interpretar sinais sociais ambíguos em tempo real. Rostos são processados na área fusiforme; a amígdala sinaliza relevância emocional e o STS lê intenções no movimento do rosto.', fig: 'expressoes' },
+    { id: 'iowa', name: 'Iowa Gambling Task', g: 'lab', x: .72, y: .5, z: .1, c: .6, r: ['vmpfc', 'ofc', 'insula', 'amy'],
+      d: 'Escolher entre baralhos com ganhos e perdas incertos. Base da hipótese do marcador somático: o vmPFC integra sinais corporais para orientar escolhas (Bechara & Damasio).', fig: 'iowa' },
+    { id: 'ellsberg', name: 'Urna de Ellsberg', g: 'lab', x: .6, y: .8, z: .12, c: .55, r: ['amy', 'ofc', 'str'],
+      d: 'Apostar numa urna de probabilidades conhecidas ou desconhecidas. Ambiguidade recruta amígdala e OFC; o risco conhecido recruta mais o estriado (Hsu et al., 2005).', fig: 'ellsberg' },
+    { id: 'ultimato', name: 'Jogo do Ultimato', g: 'lab', x: .7, y: .3, z: .8, c: .55, r: ['insula', 'dlpfc', 'acc'],
+      d: 'Aceitar ou recusar uma divisão de dinheiro. Ofertas injustas ativam a ínsula anterior; o dlPFC sustenta o objetivo econômico e o ACC sinaliza o conflito (Sanfey et al., 2003).', fig: 'ultimato' },
+    { id: 'aposta', name: 'Aposta esportiva', g: 'vida', x: .8, y: .6, z: .22, c: .45, r: ['str', 'ofc', 'insula'],
+      d: 'Avaliar probabilidades e retorno com informação parcial. A antecipação de ganho envolve o estriado ventral; a ínsula responde ao risco de perda.', fig: 'aposta' },
+    { id: 'carreira', name: 'Escolha de carreira', g: 'vida', x: .88, y: .82, z: .34, c: .9, r: ['dlpfc', 'vmpfc', 'hipp', 'fpc'],
+      d: 'Decisão de longo prazo, com alto custo de reversão. Exige simular futuros possíveis (hipocampo), comparar alternativas distantes (córtex frontopolar) e integrar valores (vmPFC).', fig: 'carreira' },
+    { id: 'acoes', name: 'Negociação de ações', g: 'vida', x: .86, y: .9, z: .62, c: .75, r: ['str', 'insula', 'vmpfc', 'dmpfc'],
+      d: 'Valor em jogo, mercado volátil e decisões influenciadas pelo que os outros farão. Inferir intenções de outros investidores recruta o dmPFC (De Martino et al., 2013).', fig: 'acoes' },
+    { id: 'diretoria', name: 'Decisão estratégica de diretoria', g: 'tcc', x: .95, y: .95, z: .95, c: .95, r: ['dlpfc', 'acc', 'ofc', 'tpj', 'fpc'],
+      d: 'Alto risco, pouca informação, vários atores e consequências difíceis de reverter. O OFC é central no arrependimento contrafactual (Camille et al., 2004; Coricelli et al., 2005); a TPJ ajuda a antecipar a reação dos outros. É aqui que o TCC procura evidências.', fig: 'diretoria' },
+  ];
+
+  // brain regions: label, full name, link, view ('L' lateral, 'M' medial), ellipse, deep?
+  const W_ = 'https://en.wikipedia.org/wiki/';
+  const REG = {
+    dlpfc:  { s: 'dlPFC', n: 'Córtex pré-frontal dorsolateral', u: W_ + 'Dorsolateral_prefrontal_cortex', v: 'L', e: [112, 78, 30, 20] },
+    vmpfc:  { s: 'vmPFC', n: 'Córtex pré-frontal ventromedial', u: W_ + 'Ventromedial_prefrontal_cortex', v: 'M', e: [84, 150, 24, 15] },
+    dmpfc:  { s: 'dmPFC', n: 'Córtex pré-frontal dorsomedial', u: W_ + 'Prefrontal_cortex', v: 'M', e: [104, 66, 26, 15] },
+    ofc:    { s: 'OFC', n: 'Córtex orbitofrontal', u: W_ + 'Orbitofrontal_cortex', v: 'L', e: [90, 160, 26, 11] },
+    acc:    { s: 'ACC', n: 'Córtex cingulado anterior', u: W_ + 'Anterior_cingulate_cortex', v: 'M', e: [140, 104, 32, 12] },
+    fpc:    { s: 'FPC', n: 'Córtex frontopolar', u: W_ + 'Brodmann_area_10', v: 'L', e: [62, 118, 14, 22] },
+    insula: { s: 'Ínsula', n: 'Córtex insular', u: W_ + 'Insular_cortex', v: 'L', e: [172, 140, 26, 11], deep: true },
+    amy:    { s: 'Amígdala', n: 'Amígdala', u: W_ + 'Amygdala', v: 'L', e: [170, 172, 9, 8], deep: true },
+    str:    { s: 'Estriado', n: 'Estriado (inclui estriado ventral / núcleo accumbens)', u: W_ + 'Striatum', v: 'L', e: [168, 112, 20, 13], deep: true },
+    bg:     { s: 'Gânglios da base', n: 'Gânglios da base', u: W_ + 'Basal_ganglia', v: 'L', e: [168, 112, 22, 15], deep: true },
+    hipp:   { s: 'Hipocampo', n: 'Hipocampo', u: W_ + 'Hippocampus', v: 'M', e: [218, 168, 28, 8] },
+    tpj:    { s: 'TPJ', n: 'Junção temporoparietal', u: W_ + 'Temporoparietal_junction', v: 'L', e: [288, 122, 20, 17] },
+    sts:    { s: 'STS', n: 'Sulco temporal superior', u: W_ + 'Superior_temporal_sulcus', v: 'L', e: [226, 158, 40, 7] },
+    ffa:    { s: 'FFA', n: 'Área fusiforme de faces', u: W_ + 'Fusiform_face_area', v: 'L', e: [262, 188, 26, 7], deep: true },
+    mt:     { s: 'MT/V5', n: 'Área visual de movimento (MT/V5)', u: W_ + 'Visual_cortex', v: 'L', e: [314, 146, 13, 11] },
+    lip:    { s: 'LIP', n: 'Área intraparietal lateral', u: W_ + 'Intraparietal_sulcus', v: 'L', e: [262, 70, 22, 12] },
+    fef:    { s: 'FEF', n: 'Campo ocular frontal', u: W_ + 'Frontal_eye_fields', v: 'L', e: [160, 58, 12, 11] },
+    pmc:    { s: 'PMC', n: 'Córtex pré-motor', u: W_ + 'Premotor_cortex', v: 'L', e: [190, 72, 13, 28] },
+    v1:     { s: 'V1/V4', n: 'Córtex visual primário e áreas de cor/forma', u: W_ + 'Visual_cortex', v: 'L', e: [344, 112, 15, 26] },
+  };
+  const short = k => REG[k].s;
+
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let shown = { lab: true, vida: true, tcc: true };
+  let selId = null, hoverId = null;
+  const V0 = { yaw: 0.78, pitch: 0.42 };
+  let yaw = V0.yaw, pitch = V0.pitch, zoom = 1, vYaw = 0, vPitch = 0;
+  let ez = 1, camX = 0, camY = 0, dim = 0, zf = 1, t0 = performance.now();
+  const canBlur = 'filter' in CanvasRenderingContext2D.prototype;
+  const blurFor = z => reduced || !canBlur ? 0 : Math.min(3.2, Math.abs(z - zf) * 1.15);
+  let auto = !reduced, showLabels = true, showZone = false, showAreas = true;
+
+  // ---------- theme tokens ----------
+  let T = {};
+  function readTokens() {
+    const cs = getComputedStyle(document.documentElement);
+    ['--paper','--surface','--ink','--ink-soft','--line','--grid','--accent','--accent-bright','--g-lab','--g-vida','--g-tcc','--ax-x','--ax-y','--ax-z']
+      .forEach(k => T[k] = cs.getPropertyValue(k).trim());
+  }
+  readTokens();
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readTokens);
+  new MutationObserver(readTokens).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class', 'style'] });
+  function hexRgb(h) {
+    h = (h || '#888').replace('#', '');
+    if (h.length === 3) h = h.split('').map(c => c + c).join('');
+    const n = parseInt(h, 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+  function mix(h, to, t) { const a = hexRgb(h), b = to === 'w' ? [255,255,255] : [0,0,0]; return `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(',')})`; }
+  function rgba(h, a) { const c = hexRgb(h); return `rgba(${c[0]},${c[1]},${c[2]},${a})`; }
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+  // ---------- 3D ----------
+  const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  const stage = document.getElementById('stage'), tip = document.getElementById('tip'), sheet = document.getElementById('sheet');
+  let W = 0, H = 0;
+  function resize() {
+    const r = cv.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = r.width; H = r.height;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  new ResizeObserver(resize).observe(cv);
+
+  const scale = () => Math.min(W, H) * (W < 560 ? 0.22 : 0.255) * ez;
+  function rot(x, y, z) {
+    const cy = Math.cos(yaw), sy = Math.sin(yaw);
+    const x1 = x * cy + z * sy, z1 = -x * sy + z * cy;
+    const cp = Math.cos(pitch), sp = Math.sin(pitch);
+    return [x1, y * cp - z1 * sp, y * sp + z1 * cp];
+  }
+  function proj(x, y, z, raw) {
+    const [a, b, c] = rot(x, y, z), k = 6 / (6 - c), S = scale();
+    return { x: W / 2 + a * S * k + (raw ? 0 : camX), y: H * 0.42 - b * S * k + (raw ? 0 : camY), z: c, k };
+  }
+  const wx = v => v * 2 - 1, wy = v => v * 2 - 1, wz = v => -(v * 2 - 1);
+  const rad = c => 5 + 15 * clamp(c ?? .5, 0, 1);
+
+  const FACES = [];
+  for (let a = 0; a < 3; a++) for (const v of [-1, 1]) FACES.push({ a, v });
+  function fp(f, u, w) { const p = [0, 0, 0], o = [0, 1, 2].filter(i => i !== f.a); p[f.a] = f.v; p[o[0]] = u; p[o[1]] = w; return p; }
+  const isBack = f => { const n = [0, 0, 0]; n[f.a] = f.v; return rot(...n)[2] < 0; };
+  const EDGES = [];
+  for (const a of [0, 1, 2]) {
+    const o = [0, 1, 2].filter(i => i !== a);
+    for (const s1 of [-1, 1]) for (const s2 of [-1, 1]) {
+      const p = [0, 0, 0], q = [0, 0, 0];
+      p[a] = -1; q[a] = 1; p[o[0]] = q[o[0]] = s1; p[o[1]] = q[o[1]] = s2;
+      EDGES.push({ p, q, faces: [{ a: o[0], v: s1 }, { a: o[1], v: s2 }] });
+    }
+  }
+  // depth-of-field for lines: split each 3D line into short pieces, blur each by its depth, draw in batches
+  let LQ = null;
+  function flushLines() {
+    const groups = new Map();
+    for (const s of LQ) {
+      const k = `${s.color}|${s.width}|${(s.dash || []).join(',')}|${s.bl}`;
+      if (!groups.has(k)) groups.set(k, []);
+      groups.get(k).push(s);
+    }
+    for (const segs of groups.values()) {
+      const s0 = segs[0];
+      // cheap defocus: out-of-focus lines are drawn as wider, fainter double strokes (no per-frame canvas filters)
+      ctx.save();
+      ctx.beginPath(); for (const s of segs) { ctx.moveTo(s.A.x, s.A.y); ctx.lineTo(s.B.x, s.B.y); }
+      ctx.strokeStyle = s0.color; ctx.lineCap = 'butt'; ctx.setLineDash(s0.dash || []);
+      const passes = s0.bl > 0.3 ? [[s0.width + s0.bl * 2.2, 0.22], [s0.width + s0.bl * 0.9, 0.38]] : [[s0.width, 1]];
+      for (const [lw, a] of passes) { ctx.globalAlpha = a; ctx.lineWidth = lw; ctx.stroke(); }
+      ctx.restore();
+    }
+    LQ = null;
+  }
+  function line(p, q, color, width, dash) {
+    if (LQ) {
+      const n = 10;
+      let A = proj(...p);
+      for (let i = 1; i <= n; i++) {
+        const t = i / n, B = proj(p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t, p[2] + (q[2] - p[2]) * t);
+        LQ.push({ A, B, color, width, dash, bl: Math.round(blurFor((A.z + B.z) / 2) / 0.4) * 0.4 });
+        A = B;
+      }
+      return;
+    }
+    const A = proj(...p), B = proj(...q);
+    ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y);
+    ctx.strokeStyle = color; ctx.lineWidth = width; ctx.setLineDash(dash || []); ctx.stroke(); ctx.setLineDash([]);
+  }
+  function poly(pts, fill) {
+    ctx.beginPath(); pts.forEach((p, i) => { const P = proj(...p); i ? ctx.lineTo(P.x, P.y) : ctx.moveTo(P.x, P.y); });
+    ctx.closePath(); ctx.fillStyle = fill; ctx.fill();
+  }
+  function text(s, x, y, font, color, align, base) {
+    ctx.font = font; ctx.fillStyle = color; ctx.textAlign = align || 'left'; ctx.textBaseline = base || 'middle';
+    ctx.fillText(s, x, y);
+  }
+  function sphere(it, P, r, col, glow, c = ctx) {
+    if (glow) { c.save(); c.shadowColor = rgba(col, 0.75); c.shadowBlur = glow; }
+    const g = c.createRadialGradient(P.x - r * 0.35, P.y - r * 0.4, r * 0.08, P.x, P.y, r);
+    g.addColorStop(0, mix(col, 'w', 0.8)); g.addColorStop(0.45, col); g.addColorStop(1, mix(col, 'k', 0.35));
+    c.beginPath(); c.arc(P.x, P.y, r, 0, Math.PI * 2); c.fillStyle = g; c.fill();
+    if (glow) c.restore();
+  }
+  // blurred spheres are rendered once into small cached sprites, so the per-frame cost stays low
+  const SPR = new Map();
+  function blitSphere(col, r, bl, glow, P) {
+    const rr = Math.round(r * 2) / 2, key = `${col}|${rr}|${bl}|${glow}`;
+    let c = SPR.get(key);
+    if (!c) {
+      if (SPR.size > 800) SPR.clear();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2), pad = Math.ceil(rr + glow + bl * 3 + 4);
+      c = document.createElement('canvas'); c.width = c.height = pad * 2 * dpr;
+      const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.filter = `blur(${bl}px)`;
+      sphere(null, { x: pad, y: pad }, rr, col, glow, g);
+      c._pad = pad; SPR.set(key, c);
+    }
+    ctx.drawImage(c, P.x - c._pad, P.y - c._pad, c._pad * 2, c._pad * 2);
+  }
+
+  const fs = () => W < 560 ? 12 : 14;
+  const fName = () => `600 ${fs()}px "IBM Plex Sans", Arial, sans-serif`;
+  const fArea = () => `italic 500 ${fs()}px "Crimson Pro", Georgia, serif`;
+  const areaText = it => it.r.map(short).join(' · ');
+  function labelBox(it, P, r, placed, force, big) {
+    const f = big ? 1.25 : 1, F1 = big ? `600 ${Math.round(fs() * f)}px "IBM Plex Sans", Arial, sans-serif` : fName(),
+      F2 = big ? `italic 500 ${Math.round(fs() * f + 1)}px "Crimson Pro", Georgia, serif` : fArea();
+    const h1 = Math.round(fs() * f), wantTwo = showAreas;
+    const hits = a => a.x < 4 || a.y < 4 || a.x + a.w > W - 4 || a.y + a.h > H - 4 ||
+      placed.some(b => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y);
+    const layout = two => {
+      ctx.font = F1; const t1 = ctx.measureText(it.name).width;
+      ctx.font = F2; const t2 = two ? ctx.measureText(areaText(it)).width : 0;
+      const w = Math.max(t1, t2) + 14, h = two ? h1 * 2 + 16 : h1 + 12, g = r + 8;
+      return [
+        { x: P.x + g, y: P.y - h / 2 }, { x: P.x - g - w, y: P.y - h / 2 },
+        { x: P.x + g, y: P.y - h - 2 }, { x: P.x + g, y: P.y + 2 },
+        { x: P.x - g - w, y: P.y - h - 2 }, { x: P.x - g - w, y: P.y + 2 },
+        { x: P.x - w / 2, y: P.y - r - h - 8 }, { x: P.x - w / 2, y: P.y + r + 8 },
+        { x: P.x + g + 26, y: P.y - h - 28 }, { x: P.x + g + 26, y: P.y + 28 },
+        { x: P.x - g - w - 26, y: P.y - h - 28 }, { x: P.x - g - w - 26, y: P.y + 28 },
+      ].map(o => ({ ...o, w, h, two }));
+    };
+    let c = layout(wantTwo), box = c.find(b => !hits(b));
+    if (!box && wantTwo && !force) { c = layout(false); box = c.find(b => !hits(b)); }
+    if (!box && force) { box = c[0]; box.x = clamp(box.x, 4, W - box.w - 4); box.y = clamp(box.y, 4, H - box.h - 4); }
+    if (!box) return;
+    placed.push(box);
+    { const nx = clamp(P.x, box.x, box.x + box.w), ny = clamp(P.y, box.y, box.y + box.h), dd = Math.hypot(nx - P.x, ny - P.y);
+      if (dd > r + 14) { ctx.beginPath(); ctx.moveTo(P.x + (nx - P.x) / dd * (r + 2), P.y + (ny - P.y) / dd * (r + 2)); ctx.lineTo(nx, ny); ctx.strokeStyle = rgba(T['--ink-soft'], 0.7); ctx.lineWidth = 1; ctx.stroke(); } }
+    ctx.fillStyle = rgba(T['--surface'], big ? 0.97 : 0.9);
+    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(box.x, box.y, box.w, box.h, 6) : ctx.rect(box.x, box.y, box.w, box.h); ctx.fill();
+    if (big) { ctx.strokeStyle = T['--accent']; ctx.lineWidth = 1.5; ctx.stroke(); }
+    if (box.two) {
+      text(it.name, box.x + 7, box.y + 6 + h1 / 2 + 1, F1, T['--ink'], 'left');
+      text(areaText(it), box.x + 7, box.y + 10 + h1 + h1 / 2 + 1, F2, T['--accent'], 'left');
+    } else text(it.name, box.x + 7, box.y + box.h / 2 + 0.5, F1, T['--ink'], 'left');
+  }
+
+  let projected = [];
+  function draw(now) {
+    ctx.clearRect(0, 0, W, H);
+    const S = scale();
+    const back = FACES.filter(isBack);
+    LQ = [];
+    for (const f of back) {
+      poly([fp(f, -1, -1), fp(f, 1, -1), fp(f, 1, 1), fp(f, -1, 1)], rgba(T['--paper'], 0.55));
+      for (let i = 1; i < 5; i++) {
+        const t = -1 + i * 0.4;
+        line(fp(f, t, -1), fp(f, t, 1), T['--grid'], 1);
+        line(fp(f, -1, t), fp(f, 1, t), T['--grid'], 1);
+      }
+    }
+    for (const e of EDGES) if (e.faces.every(isBack) || e.faces.some(isBack)) line(e.p, e.q, T['--line'], 1.2);
+    flushLines();
+
+    if (showZone) {
+      const lo = 0.32, x0 = lo, y0 = lo, z0 = -1, z1 = -lo;
+      const c = [[x0,y0,z0],[1,y0,z0],[1,1,z0],[x0,1,z0],[x0,y0,z1],[1,y0,z1],[1,1,z1],[x0,1,z1]];
+      [[0,1,2,3],[4,5,6,7],[0,1,5,4],[3,2,6,7],[0,3,7,4],[1,2,6,5]].forEach(f => poly(f.map(i => c[i]), rgba(T['--accent-bright'], 0.07)));
+      LQ = [];
+      [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]]
+        .forEach(([a, b]) => line(c[a], c[b], rgba(T['--accent-bright'], 0.75), 1.4, [5, 4]));
+      flushLines();
+      const L = proj(x0, 1, z1);
+      text(t('Zona de interesse'), L.x - 6, L.y - 12, '600 12px "IBM Plex Sans", Arial, sans-serif', T['--accent'], 'right', 'bottom');
+      text(t('valor · social · ambígua'), L.x - 6, L.y + 3, 'italic 13px "Crimson Pro", Georgia, serif', T['--ink-soft'], 'right', 'bottom');
+    }
+
+    const vis = ITEMS.filter(it => shown[it.g]);
+    projected = vis.map(it => ({ it, P: proj(wx(it.x), wy(it.y), wz(it.z)), F: proj(wx(it.x), -1, wz(it.z)) }))
+      .sort((a, b) => a.P.z - b.P.z);
+    let selP = null;
+    // Occlusion: a cube edge whose two faces both face the camera lies in front of every point inside the cube;
+    // any other edge lies behind (or on the silhouette). Axes are cube edges, so they follow the same rule.
+    const AXF = { x: [{ a: 1, v: -1 }, { a: 2, v: 1 }], y: [{ a: 0, v: -1 }, { a: 2, v: 1 }], z: [{ a: 0, v: -1 }, { a: 1, v: -1 }] };
+    const axFront = ax => !AXF[ax].some(isBack);
+    const originFront = rot(-1, -1, 1)[2] > 0 && !AXF.x.some(isBack) && !AXF.y.some(isBack) && !AXF.z.some(isBack);
+    drawAxes(false);
+    function drawAxes(front) {
+    LQ = [];
+    if (front) for (const e of EDGES) if (!e.faces.some(isBack)) line(e.p, e.q, rgba(T['--line'], 0.7), 1);
+    {
+      const W0 = { o: [-1, -1, 1], x: [1, -1, 1], y: [-1, 1, 1], z: [-1, -1, -1] };
+      const axs = ['x', 'y', 'z'].filter(ax => axFront(ax) === front);
+      for (const ax of axs) line(W0.o, W0[ax], T['--ax-' + ax], 2.8);
+      flushLines();
+      const O0 = proj(...W0.o);
+      for (const ax of axs) {
+        const E = proj(...W0[ax]);
+        const dx = E.x - O0.x, dy = E.y - O0.y, len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
+        const bl = blurFor(E.z);
+        ctx.save(); if (bl > 0.3) ctx.globalAlpha = Math.max(0.4, 1 - bl * 0.17);
+        ctx.beginPath(); ctx.moveTo(E.x + ux * 12, E.y + uy * 12); ctx.lineTo(E.x - uy * 6, E.y + ux * 6); ctx.lineTo(E.x + uy * 6, E.y - ux * 6);
+        ctx.closePath(); ctx.fillStyle = T['--ax-' + ax]; ctx.fill(); ctx.restore();
+      }
+      if (originFront === front) {
+        const bo = blurFor(O0.z);
+        ctx.save(); if (bo > 0.3) ctx.globalAlpha = Math.max(0.4, 1 - bo * 0.17);
+        ctx.beginPath(); ctx.arc(O0.x, O0.y, 4, 0, Math.PI * 2); ctx.fillStyle = T['--ink']; ctx.fill(); ctx.restore();
+      }
+    }
+    }
+    // axes
+    const placed = [], FRONT = [];
+    const O = [-1, -1, 1], ends = { x: [1, -1, 1], y: [-1, 1, 1], z: [-1, -1, -1] };
+    const Op = proj(...O), dirs = {};
+    const hull = (() => {
+      const pts = [];
+      for (const a of [-1, 1]) for (const b of [-1, 1]) for (const c of [-1, 1]) { const P = proj(a, b, c); pts.push([P.x, P.y]); }
+      pts.sort((p, q) => p[0] - q[0] || p[1] - q[1]);
+      const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+      const lo = [], up = [];
+      for (const p of pts) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop(); lo.push(p); }
+      for (const p of pts.slice().reverse()) { while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], p) <= 0) up.pop(); up.push(p); }
+      return lo.slice(0, -1).concat(up.slice(0, -1));
+    })();
+    // text behind the box: fully visible outside the cube's outline, only a faint ghost where the box covers it
+    const hullPath = () => { ctx.beginPath(); hull.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); };
+    const paintBehind = (fn, bz) => {
+      ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, H); hull.slice().reverse().forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); ctx.clip('evenodd'); fn(); ctx.restore();
+      ctx.save(); hullPath(); ctx.clip(); ctx.globalAlpha = 0.14; if (canBlur && bz > 0.3) ctx.filter = `blur(${Math.max(1, bz).toFixed(1)}px)`; fn(); ctx.restore();
+    };
+    const inHull = (x, y) => { for (let i = 0; i < hull.length; i++) { const a = hull[i], b = hull[(i + 1) % hull.length]; if ((b[0] - a[0]) * (y - a[1]) - (b[1] - a[1]) * (x - a[0]) < 0) return false; } return true; };
+    for (const ax of ['x', 'y', 'z']) {
+      const E = proj(...ends[ax]);
+      const dx = E.x - Op.x, dy = E.y - Op.y, len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
+      dirs[ax] = [ux, uy];
+      let tx = E.x + ux * 24, ty = E.y + uy * 24;
+      const align = Math.abs(ux) < 0.3 ? 'center' : (ux > 0 ? 'left' : 'right');
+      const fsT = W < 560 ? 10.5 : 11.5, fsV = W < 560 ? 15 : 18;
+      ctx.font = `600 ${fsT}px "IBM Plex Sans", Arial, sans-serif`;
+      const w1 = ctx.measureText(AXES[ax].title.toUpperCase()).width + 14;
+      ctx.font = `italic 500 ${fsV}px "Crimson Pro", Georgia, serif`;
+      const w2 = ctx.measureText(AXES[ax].hi).width, bw = Math.max(w1, w2);
+      const lo = align === 'left' ? tx : align === 'right' ? tx - bw : tx - bw / 2;
+      if (lo < 8) tx += 8 - lo; if (lo + bw > W - 8) tx -= lo + bw - (W - 8);
+      ty = clamp(ty, 22, H - 30);
+      const l2 = align === 'left' ? tx : align === 'right' ? tx - bw : tx - bw / 2;
+      placed.push({ x: l2 - 4, y: ty - 18, w: bw + 8, h: 38 });
+      const behind = !axFront(ax), bz = Math.min(2, blurFor(E.z));
+      const paint = () => {
+        ctx.save();
+        ctx.save(); ctx.font = `600 ${fsT}px "IBM Plex Sans", Arial, sans-serif`;
+        if ('letterSpacing' in ctx) ctx.letterSpacing = '1.5px';
+        text(AXES[ax].title.toUpperCase(), tx, ty - 9, ctx.font, T['--ax-' + ax], align); ctx.restore();
+        text(AXES[ax].hi, tx, ty + 9, `italic 500 ${fsV}px "Crimson Pro", Georgia, serif`, T['--ink'], align);
+        ctx.restore();
+      };
+      behind ? paintBehind(paint, bz) : FRONT.push(paint);
+    }
+    // low-end labels: each one sits on the backward extension of its own axis
+    {
+      const oFont = `italic 500 ${W < 560 ? 14 : 16}px "Crimson Pro", Georgia, serif`;
+      const tFont = `600 ${W < 560 ? 9.5 : 10.5}px "IBM Plex Sans", Arial, sans-serif`;
+      const lows = [];
+      for (const ax of ['y', 'x', 'z']) {
+        const [ux, uy] = dirs[ax], bx = ax === 'y' ? -ux : ux, by = ax === 'y' ? -uy : Math.abs(uy);
+        ctx.font = oFont; const w1 = ctx.measureText(AXES[ax].lo).width;
+        ctx.font = tFont; const w2 = ctx.measureText(AXES[ax].title.toUpperCase()).width + 12;
+        const bw = Math.max(w1, w2), bh = 34;
+        let x0, y0;
+        for (let d = ax === 'y' ? 30 : 40, n = 0; n < 40; n++, d += 6) {
+          const px = Op.x + bx * d, py = Op.y + by * Math.min(d, 40);
+          x0 = bx > 0.35 ? px : bx < -0.35 ? px - bw : px - bw / 2;
+          y0 = by > 0.75 ? py : by < -0.75 ? py - bh : py - bh / 2;
+          x0 = clamp(x0, 6, W - bw - 6); y0 = clamp(y0, 6, H - bh - 6);
+          if (!lows.some(b => x0 < b.x + b.w + 34 && x0 + bw + 34 > b.x && y0 < b.y + b.h + 6 && y0 + bh + 6 > b.y)) break;
+        }
+        lows.push({ x: x0, y: y0, w: bw, h: bh });
+        const behind = !originFront, bz = Math.min(2, blurFor(Op.z));
+        const X0 = x0, Y0 = y0;
+        const paint = () => {
+          ctx.save();
+          ctx.save(); ctx.font = tFont; if ('letterSpacing' in ctx) ctx.letterSpacing = '1.2px';
+          text(AXES[ax].title.toUpperCase(), X0 + bw / 2, Y0 + 7, tFont, T['--ax-' + ax], 'center'); ctx.restore();
+          text(AXES[ax].lo, X0 + bw / 2, Y0 + 24, oFont, T['--ink'], 'center');
+          ctx.restore();
+        };
+        behind ? paintBehind(paint, bz) : FRONT.push(paint);
+        placed.push({ x: x0 - 4, y: y0 - 2, w: bw + 8, h: bh + 4 });
+      }
+    }
+
+    for (const p of projected) {
+      const { it, P, F } = p, col = T[GROUPS[it.g].token];
+      const bl = Math.round(blurFor(P.z) / 0.4) * 0.4;
+      ctx.save(); if (bl > 0.3) ctx.globalAlpha = Math.max(0.35, 1 - bl * 0.18);
+      ctx.beginPath(); ctx.ellipse(F.x, F.y, (7 + bl) * F.k, (3 + bl * 0.6) * F.k, 0, 0, Math.PI * 2);
+      ctx.fillStyle = rgba(T['--ink'], 0.12); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(P.x, P.y); ctx.lineTo(F.x, F.y);
+      ctx.strokeStyle = rgba(T['--ink-soft'], 0.55); ctx.lineWidth = 1 + bl * 0.4; ctx.setLineDash([2, 3]); ctx.stroke(); ctx.setLineDash([]);
+      ctx.restore();
+      const r = rad(it.c) * P.k * (S / 160);
+      P.r = r;
+      if (it.id === selId) { selP = p; continue; }
+      const glow = it.g === 'tcc' ? 18 : 0;
+      if (bl > 0.3) blitSphere(col, r, bl, glow, P); else sphere(it, P, r, col, glow);
+      if (it.id === hoverId) { ctx.beginPath(); ctx.arc(P.x, P.y, r + 5, 0, Math.PI * 2); ctx.strokeStyle = rgba(T['--ink'], 0.5); ctx.lineWidth = 1.5; ctx.stroke(); }
+    }
+    drawAxes(true);
+    FRONT.forEach(f => f());
+
+    // size legend
+    {
+      const sc = S / 160;
+      ctx.save(); ctx.font = `600 ${W < 560 ? 10 : 11}px "IBM Plex Sans", Arial, sans-serif`;
+      if ('letterSpacing' in ctx) ctx.letterSpacing = '1.2px';
+      text(t('TAMANHO = CUSTO COGNITIVO'), 16, 22, ctx.font, T['--ink-soft'], 'left'); ctx.restore();
+      const lf = `italic 500 ${W < 560 ? 13 : 14}px "Crimson Pro", Georgia, serif`;
+      ctx.font = lf; const wr = ctx.measureText(t('rápido')).width;
+      const y = 54, k = Math.min(sc, 1.1), bigR = rad(1) * k;
+      text(t('rápido'), 16, y, lf, T['--ink-soft'], 'left');
+      let x = 16 + wr + 10;
+      [0, 0.5, 1].forEach(c => { const rr = rad(c) * k; ctx.beginPath(); ctx.arc(x + rr, y, rr, 0, Math.PI * 2); ctx.strokeStyle = T['--ink-soft']; ctx.lineWidth = 1.2; ctx.stroke(); x += rr * 2 + 12; });
+      const xEnd = x - 12;
+      text(t('lento, custoso'), xEnd + 8, y, lf, T['--ink-soft'], 'left');
+      const ay = y + bigR + 16, ax0 = 16 + wr / 2 + 12, ax1 = xEnd;
+      text('−', 16 + wr / 2, ay, `600 17px "IBM Plex Sans", Arial, sans-serif`, T['--ink-soft'], 'center');
+      ctx.beginPath(); ctx.moveTo(ax0, ay); ctx.lineTo(ax1 - 6, ay); ctx.strokeStyle = T['--ink-soft']; ctx.lineWidth = 1.4; ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(ax1, ay); ctx.lineTo(ax1 - 8, ay - 4.5); ctx.lineTo(ax1 - 8, ay + 4.5); ctx.closePath(); ctx.fillStyle = T['--ink-soft']; ctx.fill();
+      text('+', ax1 + 10, ay, `600 17px "IBM Plex Sans", Arial, sans-serif`, T['--ink-soft'], 'center');
+      ctx.font = lf; placed.push({ x: 0, y: 0, w: xEnd + 16 + ctx.measureText(t('lento, custoso')).width, h: ay + 14 });
+    }
+
+    // labels for non-selected (skipped while focused)
+    if (dim < 0.05) {
+      for (const p of projected) placed.push({ x: p.P.x - p.P.r - 2, y: p.P.y - p.P.r - 2, w: 2 * p.P.r + 4, h: 2 * p.P.r + 4 });
+      const q = projected.filter(p => showLabels || p.it.id === hoverId)
+        .sort((a, b) => (b.it.id === hoverId) - (a.it.id === hoverId) || (b.it.g === 'tcc') - (a.it.g === 'tcc') || b.P.z - a.P.z);
+      for (const { it, P } of q) labelBox(it, P, P.r, placed, it.id === hoverId || it.g === 'tcc', false);
+    }
+
+    // focus: darken everything, then draw the selected sphere on top
+    if (dim > 0.01) {
+      ctx.fillStyle = `rgba(8,11,18,${0.55 * dim})`; ctx.fillRect(0, 0, W, H);
+    }
+    if (selP) {
+      const { it, P } = selP, col = T[GROUPS[it.g].token];
+      const pulse = reduced ? 0 : (Math.sin((now - t0) / 380) + 1) / 2;
+      ctx.beginPath(); ctx.arc(P.x, P.y, P.r + 10 + pulse * 8, 0, Math.PI * 2);
+      ctx.strokeStyle = rgba(T['--accent-bright'], 0.55 - pulse * 0.35); ctx.lineWidth = 2; ctx.stroke();
+      sphere(it, P, P.r, col, 30);
+      ctx.beginPath(); ctx.arc(P.x, P.y, P.r + 5, 0, Math.PI * 2); ctx.strokeStyle = T['--accent-bright']; ctx.lineWidth = 2; ctx.stroke();
+      const ph = sheetOverlay() ? [{ x: W - sheet.offsetWidth - 24, y: 0, w: sheet.offsetWidth + 24, h: H }] : [];
+      labelBox(it, P, P.r, ph, true, true);
+    }
+  }
+
+  // ---------- camera / loop ----------
+  function sheetOverlay() { return !sheet.hidden && getComputedStyle(sheet).position === 'absolute'; }
+  let drag = null;
+  function tick(now) {
+    if (!drag) {
+      if (auto) yaw += selId ? 0.0012 : 0.0026;
+      yaw += vYaw; pitch = clamp(pitch + vPitch, -1.15, 1.35);
+      vYaw *= 0.92; vPitch *= 0.92;
+      if (Math.abs(vYaw) < 1e-5) vYaw = 0; if (Math.abs(vPitch) < 1e-5) vPitch = 0;
+    }
+    if (W && H) {
+      const it = selId && ITEMS.find(i => i.id === selId);
+      const tz = it ? zoom * (W < 560 ? 1.35 : 1.65) : zoom;
+      ez += (tz - ez) * (reduced ? 1 : 0.1);
+      let tx = 0, ty = 0;
+      if (it && shown[it.g]) {
+        const p = proj(wx(it.x), wy(it.y), wz(it.z), true);
+        const cx = sheetOverlay() ? (W - sheet.offsetWidth - 24) / 2 : W / 2;
+        tx = cx - p.x; ty = H * 0.5 - p.y;
+      }
+      camX += (tx - camX) * (reduced ? 1 : 0.1); camY += (ty - camY) * (reduced ? 1 : 0.1);
+      dim += ((it ? 1 : 0) - dim) * (reduced ? 1 : 0.12);
+      const sp = it && projected.find(q => q.it.id === it.id);
+      const fz = sp ? sp.P.z : hoverId && projected.find(q => q.it.id === hoverId) ? projected.find(q => q.it.id === hoverId).P.z : (projected.length ? Math.max(...projected.map(q => q.P.z)) : zf);
+      zf += (fz - zf) * (reduced ? 1 : 0.1);
+      draw(now);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  // ---------- interaction ----------
+  function hit(mx, my) {
+    for (let i = projected.length - 1; i >= 0; i--) {
+      const { it, P } = projected[i];
+      if (Math.hypot(mx - P.x, my - P.y) <= (P.r || 10) + 6) return it;
+    }
+    return null;
+  }
+  function local(e) { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+  cv.addEventListener('pointerdown', e => {
+    cv.setPointerCapture(e.pointerId);
+    drag = { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY };
+    vYaw = vPitch = 0; cv.classList.add('dragging');
+  });
+  cv.addEventListener('pointermove', e => {
+    const [mx, my] = local(e);
+    if (drag) {
+      const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      if (Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) > 4 && auto) setAuto(false);
+      yaw += dx * 0.008; pitch = clamp(pitch + dy * 0.008, -1.15, 1.35);
+      vYaw = dx * 0.008; vPitch = dy * 0.008;
+      drag.x = e.clientX; drag.y = e.clientY;
+      tip.hidden = true; return;
+    }
+    const it = hit(mx, my);
+    hoverId = it ? it.id : null;
+    cv.style.cursor = it ? 'pointer' : '';
+    if (it && it.id !== selId) showTip(it, mx, my); else tip.hidden = true;
+  });
+  function endDrag(e) {
+    if (!drag) return;
+    const moved = Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy);
+    drag = null; cv.classList.remove('dragging');
+    if (moved < 5) { const [mx, my] = local(e), it = hit(mx, my); it ? select(it.id) : select(null); }
+  }
+  cv.addEventListener('pointerup', endDrag);
+  cv.addEventListener('pointercancel', () => { drag = null; cv.classList.remove('dragging'); });
+  cv.addEventListener('pointerleave', () => { hoverId = null; tip.hidden = true; });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && selId) select(null); });
+  cv.addEventListener('wheel', e => {
+    e.preventDefault();
+    const d = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+    zoom = clamp(zoom * Math.exp(-d * 0.0015), 0.5, 2.4);
+  }, { passive: false });
+  cv.addEventListener('keydown', e => {
+    const k = { ArrowLeft: [-0.12, 0], ArrowRight: [0.12, 0], ArrowUp: [0, -0.1], ArrowDown: [0, 0.1] }[e.key];
+    if (!k) return;
+    e.preventDefault(); setAuto(false);
+    yaw += k[0]; pitch = clamp(pitch + k[1], -1.15, 1.35);
+  });
+
+  function word(ax, v) { return v < 0.34 ? AXES[ax].lo : v < 0.67 ? AXES[ax].mid : AXES[ax].hi; }
+  function costWord(v) { return v < 0.34 ? t('Rápido, pouco custo') : v < 0.67 ? t('Custo moderado') : t('Lento, alto custo'); }
+  function showTip(it, mx, my) {
+    tip.innerHTML = '';
+    const s = document.createElement('strong'); s.textContent = it.name; tip.appendChild(s);
+    [['x', 'Tipo'], ['y', 'Volatilidade'], ['z', 'Contexto']].forEach(([ax, l]) => {
+      const sp = document.createElement('span'); sp.textContent = `${t(l)}: ${word(ax, it[ax])}`; tip.appendChild(sp);
+    });
+    const c = document.createElement('span'); c.textContent = `${t('Custo')}: ${costWord(it.c)}`; tip.appendChild(c);
+    const a = document.createElement('span'); a.textContent = `${t('Áreas')}: ${areaText(it)}`; a.style.marginTop = '4px'; tip.appendChild(a);
+    tip.hidden = false;
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+    let x = mx + 16, y = my + 16;
+    if (x + tw > W - 8) x = mx - tw - 16;
+    if (y + th > H - 8) y = my - th - 16;
+    tip.style.left = Math.max(8, x) + 'px'; tip.style.top = Math.max(8, y) + 'px';
+  }
+
+  // ---------- brain figure ----------
+  // Anatomical outlines (schematic). Front of the brain is on the left.
+  const POS_L = {
+    dlpfc: [112, 76, 28, 18], ofc: [90, 158, 24, 9], fpc: [60, 120, 11, 22], fef: [156, 50, 11, 10], pmc: [178, 70, 12, 26],
+    insula: [188, 146, 26, 9, true], amy: [160, 180, 8, 7, true], str: [172, 116, 20, 12, true], bg: [172, 116, 22, 14, true],
+    tpj: [290, 136, 18, 15], sts: [214, 179, 46, 6], ffa: [244, 207, 24, 6, true], mt: [318, 150, 12, 10], lip: [278, 74, 20, 11], v1: [354, 118, 12, 24],
+  };
+  const POS_M = {
+    vmpfc: [84, 146, 22, 14], dmpfc: [110, 62, 24, 14], acc: [138, 98, 26, 10], hipp: [192, 180, 26, 7], amy: [164, 182, 8, 7],
+    ofc: [90, 168, 20, 8], fpc: [60, 120, 11, 20], v1: [342, 136, 16, 9],
+  };
+  const BRAIN = {"CER_L": "M48 150 C34 112 42 66 86 40 C136 12 222 4 290 20 C344 34 380 74 382 118 C384 150 372 170 352 178 C334 184 316 182 300 176 C280 164 250 152 214 148 C186 146 158 150 136 160 C118 168 100 178 82 176 C64 172 52 164 48 150 Z", "TMP_L": "M126 168 C142 152 176 146 214 148 C252 150 286 162 308 178 C320 188 314 204 298 210 C268 220 222 222 182 216 C152 212 130 202 120 190 C116 180 118 172 126 168 Z", "CBL_L": "M290 202 C306 182 348 176 372 188 C390 198 390 220 374 232 C352 246 314 246 296 234 C284 226 282 212 290 202 Z", "STM_L": "M266 206 C274 202 288 204 294 212 C298 224 296 238 292 248 C290 253 289 257 288 260 L276 260 C275 255 272 249 270 243 C263 231 260 216 266 206 Z", "GYR_CER": "M258.0 36.6 256.5 36.6 255.0 35.4 252.3 27.5 248.0 25.0 239.5 27.3 226.5 25.7 221.0 26.2 215.5 23.3 209.5 31.9 207.5 33.1 205.5 33.0 198.4 27.5 196.2 24.0 196.4 17.5 198.0 16.1 201.4 15.0M210.0 14.5 210.8 18.0 215.0 19.7 223.0 19.3 228.7 15.0M258.8 17.0 258.0 21.0 261.5 25.6 264.0 26.3 269.0 23.9 271.0 23.8 273.5 25.9 274.5 28.5 273.6 31.0 271.5 32.8 264.0 33.1 258.0 36.6M188.6 15.5 188.4 18.0 187.0 20.5 181.0 23.8 177.5 28.7 175.5 30.0M163.0 48.0 161.8 47.5 161.6 46.5 163.4 41.0 163.3 38.5 161.1 36.5 151.3 32.0 150.2 24.0 149.0 21.0M156.0 19.7 162.0 23.2 165.6 26.5 172.0 35.3 174.6 41.0 174.5 44.0 173.0 45.6 163.0 48.0M332.5 179.0 328.7 179.0 330.2 176.0 328.7 168.5 333.0 162.5 333.9 160.0 333.5 157.0 332.0 154.8 328.5 153.7 323.0 154.1 318.6 161.0 316.0 162.1 310.0 160.9 306.9 156.5 304.5 154.5 291.0 149.3 289.5 149.5 288.3 151.0 287.7 156.0 291.0 158.3 296.9 164.5 302.0 166.8 308.0 166.7 318.5 169.0 318.7 171.5 316.2 177.5 314.0 177.5M287.1 166.0 285.8 158.0 279.5 156.3 274.6 154.0 273.7 152.0 275.0 149.0 282.5 145.3 289.0 145.5 301.5 139.5 308.7 147.0 312.5 155.4 314.0 156.3 315.5 156.2 320.8 152.0 322.0 145.0 321.0 142.1 316.5 138.5 314.8 134.5 313.5 133.3 309.0 133.7 302.5 137.7 301.0 137.9 294.5 131.9 290.5 126.2 288.5 125.6 284.6 126.0 278.5 128.3 273.2 136.0 271.0 137.3 266.5 136.8 261.5 133.4 255.0 136.6 248.5 136.1 242.0 143.5 239.3 149.5 238.0 149.5M221.5 146.0 219.2 146.0 221.0 140.0 222.5 138.1 226.5 138.8 232.5 142.2 234.5 141.5 234.7 139.5 232.5 133.0 233.2 130.0 235.0 127.8 239.0 126.5 246.5 128.8 250.5 124.5 251.2 122.0 250.6 120.0 245.3 116.5 243.6 114.0 243.8 108.0 240.6 103.5 242.1 100.0 250.0 93.7 252.0 94.1 253.5 96.2 254.1 99.0 252.2 108.0 253.0 110.1 255.0 111.2 257.5 109.9 260.2 106.5 263.4 100.5 263.5 97.5 258.0 90.7 254.5 89.2 250.0 90.1 242.5 90.3 235.0 94.3 228.0 94.5 225.4 92.5 223.0 84.5 221.5 83.3 219.0 82.9 215.5 84.3 214.2 87.0 215.0 89.8 218.6 94.5 218.4 97.5 215.0 99.2 209.0 98.8 202.5 94.5 198.5 87.5 193.3 84.5 192.8 82.5 194.0 73.1 196.0 72.0 198.5 72.5 206.9 79.5 211.0 79.8 212.9 78.5 213.6 76.5 210.8 70.5 210.8 68.5 213.5 66.2 217.0 65.2 227.6 72.0 231.0 80.5 235.5 84.5 238.0 85.3 239.5 84.5 240.3 75.0 241.5 73.4 243.5 72.9 247.0 73.3 249.0 74.5 248.6 82.5 250.0 84.2 252.5 84.2 256.0 81.0 258.8 77.0 258.8 75.5 257.1 72.0 257.6 69.5 261.4 65.5 264.7 59.0 271.0 53.5 270.8 51.5 267.0 46.0 268.5 40.9 270.5 39.0 272.5 38.7 282.5 41.7 284.5 40.7 286.6 38.0 287.5 34.5 284.0 28.5 287.0 22.0M300.7 26.0 303.0 29.5 303.3 32.0 301.4 39.5 298.5 44.9 296.5 47.2 294.5 47.9 283.5 46.0 281.3 49.0 280.8 53.0 283.5 59.0 290.5 64.7 293.5 65.5 301.5 64.7 305.6 66.0 305.9 69.5 302.6 76.0 302.4 78.0 305.8 85.5 310.5 90.6 315.0 91.7 324.0 87.1 328.0 87.6 331.2 80.0 330.6 74.5 335.5 68.0 342.0 61.7 344.5 61.3 353.5 62.2 357.4 64.0 359.5 66.5 359.2 68.5 354.0 73.3 351.5 73.9 346.0 72.9 342.9 75.0 342.3 77.5 344.0 83.0 341.8 88.0 341.0 94.0 339.5 95.9 337.5 96.0 333.0 91.7 328.0 88.9 326.9 96.0 321.0 104.0 322.0 106.5 326.0 110.7 327.5 111.3 336.5 105.0 346.0 103.3 347.2 101.5 349.3 94.0 351.5 90.9 352.5 90.8 355.0 93.8 356.3 97.0 355.8 106.0 356.4 110.5 354.5 113.3 349.3 116.0 349.0 119.0 350.5 121.1 353.0 122.2 360.0 123.2 364.6 122.5 368.3 113.0 373.5 105.1 374.6 100.5 373.4 94.0 367.2 83.5 367.4 78.0M379.5 118.0 379.5 128.5 375.5 123.9 373.5 122.7 368.6 123.0 366.4 124.5 366.9 128.5 369.0 131.7 371.5 133.1 377.5 134.0 379.0 136.0 377.5 144.5 375.0 152.0 371.0 160.0 365.5 167.0 359.0 166.1 357.8 164.5 363.0 162.9 366.1 160.0 367.2 152.5 370.0 146.0 368.8 143.0 360.0 139.2 354.0 140.2 346.0 139.8 343.7 136.0 342.9 127.0 339.5 123.2 335.5 121.3 333.0 121.1 331.7 122.0 329.7 130.5 328.0 132.8 325.5 132.9 319.0 129.5 318.6 131.0 319.7 133.0 326.8 141.5 331.5 145.8 335.0 146.5 341.5 143.3 345.5 142.9 351.7 148.0 356.7 155.0 356.6 161.0 355.5 163.0 351.0 162.8 345.0 158.9 342.6 159.5 341.7 162.5 343.1 167.0 342.7 168.0 336.9 175.5 335.6 178.5 332.5 179.0M83.0 167.2 78.5 166.0 75.6 163.0 81.5 151.4 87.4 145.5 86.5 143.5 79.1 136.0 81.2 129.0 81.0 126.5 79.0 125.9 71.5 129.4 66.0 129.2 62.2 127.0 61.2 122.5 62.3 120.0 66.8 116.0 67.6 114.5 65.1 108.5 65.1 106.0 70.1 100.0 72.5 94.7 75.0 92.9 77.0 93.5 78.4 96.0 76.9 112.5 81.0 122.5 81.9 123.5 83.0 123.5 89.7 120.5 88.8 115.0 89.3 108.0 85.7 102.0 85.0 98.5 85.8 96.0 89.4 91.0 91.4 84.0 93.5 80.1 95.4 72.5 95.2 69.5 92.5 65.2 86.8 62.0 85.7 55.5 84.0 51.7 82.0 49.9 79.5 49.5 71.8 53.5 70.2 56.0 72.1 58.5 80.2 63.5 83.0 76.3 84.0 77.7 87.8 79.5 88.0 80.7 86.0 81.1 82.0 79.3 77.0 79.3 71.7 74.5 67.5 72.5 66.0 73.0 63.3 77.0 61.0 78.4 58.5 78.4 53.8 76.5M83.0 44.8 95.0 43.7 103.0 46.0 105.6 41.5 110.5 37.0 110.3 34.5 108.2 32.5M129.6 25.5 131.5 28.3 145.5 32.3 147.7 33.5 148.3 36.0 147.1 44.0 148.4 45.5 154.5 48.2 156.6 50.0 157.0 53.0 156.1 57.5 154.5 60.5 152.5 61.5 141.5 59.8 135.2 69.0 134.8 70.5 135.4 71.5 142.0 70.3 144.4 71.5 145.3 73.5 144.0 75.7 137.0 78.7 131.8 85.5 134.0 86.8 140.0 87.6 141.5 89.0 141.1 95.0 138.0 98.8 133.5 100.3 127.6 95.5 126.2 93.0 126.2 91.0 129.7 86.0 125.5 83.9 123.5 84.9 121.2 90.0 119.0 92.7 110.9 98.0 104.5 98.1 96.5 94.4 95.0 94.5 93.5 95.7 91.6 102.0 91.6 106.5 93.5 108.2 101.0 111.0 102.4 112.5 102.9 114.5 100.4 118.5 95.3 122.5 95.3 127.5 92.6 135.0 93.0 140.5 89.5 145.0 95.1 151.0 95.8 155.0 93.5 157.4 85.5 160.0 84.1 162.0 83.0 167.2M323.5 77.1 319.5 77.3 317.1 76.0 315.5 67.8 311.0 63.0 309.2 59.0 298.5 55.9 295.7 53.5 295.8 51.5 297.0 50.0 305.0 48.3 309.2 44.5 309.8 42.0 308.8 36.0 309.9 29.5M323.7 36.0 320.2 41.0 319.9 43.0 321.0 44.6 326.0 45.6 327.3 47.5 327.0 54.5 323.9 64.5 325.4 69.0 329.2 74.5 323.5 77.1M247.5 67.2 247.5 67.2M111.2 82.0 111.2 82.0M156.5 90.0 156.5 90.0M280.8 87.5 280.8 87.5M121.5 164.0 120.9 164.0 121.5 162.2 126.0 159.8 128.0 151.0 133.3 147.5 135.6 143.5 134.5 142.3 129.5 144.8 127.0 144.7 121.5 138.8 117.5 135.9 116.1 133.5 116.5 131.0 120.0 129.9 121.8 130.5 124.2 134.5 127.0 136.0 131.5 135.9 133.5 133.0 133.9 129.0 132.6 126.5 130.5 125.4 126.5 125.3 125.2 124.5 125.2 117.0 122.2 109.0 123.2 106.5 127.5 103.1 133.5 100.8 142.2 108.5 143.3 112.5 139.8 123.5 140.1 125.0 141.5 126.5 145.0 126.8 149.5 124.8 151.0 125.9 156.0 125.2 164.5 126.2 165.5 124.5 165.0 122.5 158.5 112.2 157.5 111.9 153.0 113.9 151.0 112.1 150.2 106.5 151.5 98.6 155.5 93.3 156.5 93.3 158.0 94.9 160.4 100.0 157.8 107.0 158.0 109.3 159.0 109.5 166.5 102.1 169.5 101.2 175.5 101.4 177.0 100.5 177.6 98.0 177.0 89.4 178.1 87.5 180.5 86.4 184.5 85.9 187.5 86.9 193.2 95.5 194.0 99.0 191.5 105.5 191.8 106.5 197.5 109.1 204.5 109.9 206.5 112.5 208.3 119.5 203.6 125.0 202.7 128.0 205.2 134.5 210.1 140.5 210.6 143.0 209.6 145.0 199.5 145.0M199.0 144.5 181.9 145.5 179.6 143.0 179.0 140.0 179.5 137.0 181.0 135.6 186.2 134.0 188.0 132.6 191.4 121.5 188.8 113.0 190.1 106.5 187.0 105.8 181.5 106.3 173.0 109.2 171.4 111.0 172.7 115.0 179.0 120.5 179.7 122.5 177.0 132.2 173.5 138.3 171.0 138.6 168.6 133.0 166.0 130.9 164.0 131.6 159.5 136.5 157.0 137.3 153.5 136.3 148.0 131.9 144.5 132.2 140.7 135.5 138.3 141.0 145.2 148.0 146.0 150.0 145.3 152.0 141.7 155.0 121.5 164.0M49.0 88.4 53.5 89.8 56.8 93.0 57.5 94.5 57.2 97.5 60.3 106.0 59.9 108.0 58.2 110.0 51.0 114.1M304.2 125.0 304.2 125.0M222.0 134.2 222.0 134.2M101.0 143.1 101.0 143.1M251.5 152.5 250.7 148.5 253.5 143.0 257.0 140.6 261.5 140.4 262.6 142.0 260.9 148.0 261.1 151.0 262.7 153.5 267.0 157.5M91.5 173.5 91.5 173.5", "GYR_TMP": "M131.0 177.6 128.0 176.5 126.5 175.0 135.3 169.5 134.6 166.5 136.4 163.0M150.9 157.0 151.0 163.0 154.7 168.0 157.5 168.7 162.0 168.2 163.0 167.0 162.7 165.5 158.2 160.5 157.9 156.5 156.7 155.0M163.7 153.5 163.5 156.0 165.4 159.5 165.7 162.0 167.5 162.8 171.5 162.8 175.1 161.0 176.7 157.5 169.8 154.0 168.7 152.5M221.0 151.0 220.2 153.0 219.0 153.5 215.5 153.7 211.5 152.3 209.1 153.5 213.0 155.3 217.0 158.3 221.5 157.1 222.9 154.0 224.0 153.2 229.5 152.2M230.4 152.5 233.0 154.8 238.0 154.6 239.3 153.5M269.0 161.0 267.1 163.0 267.0 167.5 268.7 169.0 272.0 169.6 276.1 169.0 279.3 167.5 279.8 165.5M285.0 167.5 286.7 170.0 284.5 172.3 272.5 176.2 269.0 176.1 263.5 174.1 258.5 166.9 252.6 165.5 252.7 162.5 262.0 161.7 262.8 161.0 262.2 160.0 259.5 158.6 253.5 158.8 247.0 157.1 244.3 158.5 244.0 161.2 240.5 163.1 236.5 167.0 233.5 167.8 231.5 166.5 229.6 166.5 229.5 167.5 230.9 169.5 227.5 172.7 226.5 175.7 216.5 175.1 207.0 177.3 204.7 176.0 205.6 174.5 214.1 171.5 217.3 169.5 216.7 164.0 215.5 161.4 214.0 160.4 209.0 160.8 208.9 167.0 201.5 168.5 200.7 172.0 195.5 174.2 187.5 173.1 185.5 170.8 179.9 169.0 180.8 167.5 184.5 165.2 191.5 164.8 195.0 163.0 200.0 162.5 201.5 160.0 206.5 159.1 206.3 156.5 207.1 154.0 200.5 152.2 196.0 153.7 192.5 153.8 193.2 156.0 192.5 157.1 183.0 159.8 179.2 164.0 166.9 169.5 166.1 172.5 165.0 173.7 156.5 173.5 150.5 170.0 141.0 168.6 138.7 170.0 141.2 173.0 131.0 177.6M258.5 203.5 258.5 203.5M185.5 213.5 183.6 213.5 182.2 212.0 182.9 209.5 180.0 206.5 178.0 205.8 174.5 205.9 173.0 204.0 164.1 199.5 161.6 199.5 160.8 200.5 164.0 203.5 164.5 205.6 156.0 203.1 148.5 199.2 142.5 198.7 139.0 196.4 133.5 196.1 129.0 190.7 127.5 190.9 125.5 192.5M121.0 181.4 126.0 181.1 131.5 178.6 132.8 180.0 132.6 181.5 128.3 185.5 128.2 188.0 130.0 189.2 137.0 188.4 139.2 187.5 143.8 181.5 144.4 177.5 145.5 175.8 154.0 175.6 154.3 176.5 152.0 180.5 153.0 181.9 156.0 183.4 156.5 185.5 154.5 186.4 148.5 185.6 144.7 186.5 144.1 187.5 144.7 189.5 142.2 192.5 143.5 193.8 146.5 194.3 148.8 193.5 149.3 191.0 150.2 190.5 155.5 189.6 161.5 190.0 163.0 186.5 168.0 184.3 169.2 183.0 168.9 181.5 166.0 178.5 166.1 177.0 173.6 174.5 174.3 172.5 175.5 171.8 177.6 172.0 180.0 174.4 184.1 175.0 187.0 177.5 191.2 179.5 190.5 181.3 185.5 184.0 188.2 186.5 190.5 186.4 194.5 182.9 204.0 180.1 206.5 180.3 207.5 181.5 207.0 184.5 207.6 187.5 192.5 190.6 190.3 192.0 191.0 193.2 198.0 195.8 204.5 193.7 207.4 194.0 208.8 195.0 208.2 196.5 205.5 198.2 203.5 198.7 199.0 197.2 194.4 200.5 194.6 202.5 191.5 204.0 190.6 208.0 187.7 210.0 192.0 214.5M302.5 177.4 293.3 175.5 292.2 174.0 293.5 171.5M307.5 201.4 304.5 200.0 293.5 200.6 293.4 199.5 295.5 197.9 302.0 197.5 304.0 196.5 305.0 195.0 304.0 192.5 303.0 191.3 299.5 189.8 298.0 186.5 296.0 184.5 290.0 183.2 286.5 180.8 280.4 179.0 278.6 177.0 284.0 173.7 286.0 173.7 287.3 174.5 287.8 177.5 288.9 178.5 298.0 179.9 305.0 184.1 307.0 186.0 307.7 189.5 310.0 189.1 311.0 186.2 311.0 187.5M311.5 188.0 311.5 193.5 307.5 201.4M180.2 203.5 180.2 203.5M277.0 199.7 277.0 199.7M236.5 208.6 236.5 208.6M263.0 214.5 263.0 214.5M204.0 215.5 200.3 215.5 203.4 213.5 201.0 211.0 206.5 209.0 212.1 213.0 212.7 214.5 211.5 216.0M172.5 211.5 170.6 211.5 173.5 210.2 176.5 210.0 179.4 211.0 179.8 211.5 179.0 212.7", "FOL_L": "M286 191.0 C318 181.0 352 180.0 392 192.0M286 196.2 C318 186.2 352 185.2 392 197.2M286 201.4 C318 191.4 352 190.4 392 202.4M286 206.6 C318 196.6 352 195.6 392 207.6M286 211.8 C318 201.8 352 200.8 392 212.8M286 217.0 C318 207.0 352 206.0 392 218.0M286 222.2 C318 212.2 352 211.2 392 223.2M286 227.4 C318 217.4 352 216.4 392 228.4M286 232.6 C318 222.6 352 221.6 392 233.6M286 237.8 C318 227.8 352 226.8 392 238.8M286 243.0 C318 233.0 352 232.0 392 244.0", "OUT_M": "M48 150 C34 112 42 66 86 40 C136 12 222 4 290 20 C344 34 380 74 382 118 C384 148 372 170 350 180 C326 188 302 190 286 190 C266 204 234 218 198 218 C160 218 132 206 118 192 C104 182 92 178 80 176 C62 170 52 162 48 150 Z", "CING_M": "M110 138 C108 72 226 54 302 82 C322 90 326 112 314 124 L294 124 C304 118 300 104 286 98 C226 74 142 86 128 118 C124 128 118 140 110 138 Z", "CC_M": "M128 118 C142 86 226 74 286 98 C300 104 304 118 294 124 C280 118 266 112 252 108 C214 98 174 100 152 118 C144 128 126 128 128 118 Z", "STM_M": "M230 146 C242 150 248 160 249 172 C262 178 268 192 265 208 C262 218 258 226 257 236 L256 260 L245 260 L245 236 C243 226 239 218 236 210 C230 196 228 184 228 170 C226 160 226 152 230 146 Z", "CBL_M": "M270 196 C284 180 326 176 354 190 C374 200 376 222 360 234 C338 248 300 246 282 234 C270 226 266 208 270 196 Z", "GYR_M": "M182.0 71.0 180.5 71.0 181.2 64.0 180.5 61.5 174.4 56.0 173.4 53.0 176.3 48.0 184.0 41.0 184.3 38.5 182.3 33.0 187.7 29.0 189.1 27.0 189.3 22.0 186.7 16.0M198.2 15.0 192.8 28.5 192.6 31.5 193.7 34.5 196.2 37.5 200.0 40.2 202.5 40.9 205.0 39.6 207.3 36.5 208.4 24.0 212.3 14.5M218.6 14.5 222.0 22.5 224.0 24.3 230.2 20.0 231.5 15.0M240.4 15.5 234.5 21.7 231.1 28.5 228.5 29.4 223.5 28.6 219.0 35.0 213.3 38.5 212.3 41.0 212.2 47.5 211.0 49.5 208.5 49.9 203.0 46.7 196.5 46.8 190.0 43.3 187.2 43.5 186.3 45.5 186.4 48.5 189.8 55.0 190.5 61.0 192.5 62.6 199.7 65.0 200.7 67.0 200.4 68.0 185.0 70.0 182.0 71.0M169.5 36.6 166.3 36.0 165.6 33.5 166.1 28.5 162.5 27.1 154.0 28.8 146.0 29.3 144.0 28.4 140.5 24.7 137.0 24.4 131.0 27.2 126.4 33.5 122.0 35.1 119.8 34.0 120.0 28.5M174.7 17.0 167.6 27.0 167.7 28.0 172.8 30.5 174.6 32.5 173.1 35.0 169.5 36.6M260.5 41.5 260.5 41.5M288.5 30.6 285.5 30.6 282.5 28.6 280.2 25.0 279.3 20.5M339.5 134.6 337.5 134.5 336.2 132.5 338.0 125.0 336.3 114.0 334.0 113.4 322.5 114.2M323.5 105.9 328.0 103.8 330.6 101.5 331.5 99.0 330.7 95.5 329.0 93.0 327.0 91.6 319.5 90.9 316.0 89.5M302.0 79.0 304.3 71.5 304.2 68.5 302.5 66.1 297.0 64.5 295.5 63.2 295.2 61.0 296.5 55.0 292.4 47.5 293.1 44.5 296.4 39.5 295.1 33.0 297.8 30.5 304.0 28.7 306.5 29.4 312.0 34.2 314.0 34.3 317.6 33.0M322.0 35.0 322.0 38.5 317.8 45.0 317.1 51.0 316.0 52.8 314.0 53.1 311.8 51.5 310.6 46.0 309.0 44.1 306.0 43.8 303.6 45.5 303.2 48.5 304.6 54.0 304.2 60.5 305.3 63.5 313.5 66.7 314.9 69.5 316.5 77.5 319.5 82.5 323.0 85.6 330.5 87.9 346.0 86.5 355.5 87.7 360.5 90.2 362.2 92.0 362.4 94.5 361.1 99.0 361.6 100.0 366.0 103.3 372.5 104.3 373.3 105.5 372.5 108.0 366.5 116.9 364.5 118.3 362.0 118.4 356.5 115.9 354.7 114.0 353.7 111.5 354.8 107.0 360.0 100.0 359.1 98.5 356.5 97.3 353.5 97.2 342.5 99.5 339.3 101.0 337.4 105.0 338.4 111.5 346.2 116.0 349.6 122.5 354.3 128.0 353.5 129.2 351.5 129.6 346.5 127.0 343.0 127.3 341.1 129.0 339.5 134.6M88.0 67.6 83.0 66.5 81.2 65.0 80.7 63.5 86.2 55.0 87.0 48.8 84.5 46.7 80.0 47.0M89.6 41.0 90.3 47.0 96.3 51.0 97.2 53.0 92.2 65.0 90.5 66.7 88.0 67.6M342.0 53.6 340.0 53.7 338.5 52.3 332.6 41.5M228.0 66.5 228.0 66.5M270.5 70.5 268.0 70.5 263.0 68.2 260.5 65.5 259.5 54.4 261.2 51.5 264.0 50.6 272.5 59.0 275.3 63.0 276.8 68.0 275.0 71.5M150.5 81.0 150.5 81.0M80.0 136.0 74.5 135.8 73.4 134.5 73.2 132.5 75.4 126.0 76.0 119.1 77.5 117.6 82.0 115.6 82.6 112.5 81.7 111.0 77.5 109.1 72.0 104.5 68.9 100.5 68.0 95.5 71.4 89.0 67.5 85.7 64.5 84.8 61.5 86.3 58.0 90.8 57.0 90.8 53.5 87.9 48.5 89.9M59.0 67.2 61.5 68.6 68.0 74.9 72.5 76.1 74.0 77.7 75.8 84.5 72.7 90.0 76.0 96.0 79.9 101.0 82.5 108.0 84.0 109.0 90.5 109.6 94.3 111.5 98.0 114.7 100.7 119.5 100.8 122.0 99.0 123.2 89.0 120.6 85.0 121.0 82.4 126.0 82.9 134.5 80.0 136.0M112.0 115.4 112.0 115.4M182.5 125.5 179.0 125.3 175.7 120.0 167.9 115.0 167.3 113.5 169.5 111.5 173.0 109.9 180.5 110.5 186.8 106.5M200.5 105.0 200.4 107.0 201.5 107.8 210.5 106.7 217.5 108.7 218.9 107.5 218.9 105.0M245.5 109.0 243.5 111.2 233.5 116.5M214.0 111.0 207.5 111.5 200.4 113.5 198.5 109.9 193.5 110.1 191.9 112.0 191.5 118.5 185.5 124.9 182.5 125.5M324.5 153.0 321.0 152.2 318.7 149.0 321.7 140.5 321.6 134.0 319.6 132.0 312.9 128.5 311.9 127.0M320.0 120.0 322.9 125.5 324.5 132.0 330.8 138.5 333.4 145.0 333.4 147.5 332.3 149.5 324.5 153.0M82.5 172.1 79.5 171.8 74.0 167.5 67.0 168.0M57.6 161.5 55.7 155.5 58.2 146.0 58.1 142.0 56.4 136.5 54.5 134.6 49.5 138.0 47.0 138.5M46.0 132.6 46.6 124.0 48.5 122.0 50.0 122.5 55.5 128.4 60.5 128.7 62.5 130.0 64.5 132.6 65.3 135.5 64.0 141.5 64.3 145.0 62.8 149.5 63.2 151.5 67.5 156.3 74.0 159.5 77.0 158.8 79.7 156.0 81.5 145.0 86.0 137.6 90.0 136.4 93.0 137.3 94.0 140.0 93.9 146.0 92.9 147.5 88.1 151.0 85.8 155.0 84.8 159.5 86.6 169.0 85.5 170.9 82.5 172.1M294.5 177.0 292.5 177.4 290.5 176.6 282.2 171.0 282.4 169.0 284.0 167.3 291.5 165.0 290.8 154.5 288.5 149.7 280.0 139.1 277.6 132.0 278.0 129.2 279.5 127.6 286.6 126.5 290.0 125.0M298.0 127.0 297.2 129.0 292.0 135.5 291.3 139.0 292.0 141.5 294.5 143.1 297.5 142.6 300.2 139.0 303.0 131.1 305.0 129.9 307.5 129.7 309.3 131.0 309.0 143.0 307.5 146.3 300.5 150.5 298.0 153.5 297.9 158.0 301.9 164.5 302.3 167.0 300.9 170.0 294.5 177.0M258.0 140.5 254.5 140.2 244.5 135.1M244.5 128.7 251.5 125.0 257.0 130.5 260.0 131.3 262.8 130.0 266.5 125.5 269.0 125.4 269.6 128.0 267.0 135.7 264.9 137.5 258.0 140.5M146.5 143.7 143.6 143.5 141.1 141.0 139.8 136.0 137.1 132.0 138.4 128.0M142.5 127.4 144.1 131.0 149.5 134.3 150.6 136.0 149.3 140.5 146.5 143.7M126.5 168.6 122.5 167.9 120.0 163.1 118.0 161.4 109.0 160.9 106.8 159.5 106.2 157.0 106.6 153.5 110.6 145.0 109.8 141.0M116.4 139.5 116.6 142.5 118.3 145.5 128.0 153.0 129.0 154.5 127.4 162.0 127.7 167.0 126.5 168.6M367.5 159.0 367.5 159.0M193.0 214.4 189.5 213.7 186.3 210.5 183.4 201.5 180.5 196.5 179.0 191.0 179.5 188.0 186.7 181.5 187.1 179.0 186.1 176.0 182.5 173.4 177.5 172.2 174.5 172.9 169.5 176.2 166.5 176.2 164.5 174.7 163.4 172.5 162.9 165.0 156.0 163.5 153.5 164.4 145.4 175.5 146.7 187.0 148.0 189.6 150.0 189.7 155.2 182.5 158.5 180.6 162.0 181.4 165.4 184.0 165.5 186.5 160.9 193.0 160.0 195.5 160.8 197.0 166.3 200.5 167.6 202.5 168.1 212.5 166.5 212.5M151.3 208.0 154.4 199.5 154.5 197.5 152.0 195.3 143.0 191.1 139.0 188.0 137.9 186.0 138.0 184.0 141.9 178.0 142.3 176.0 140.3 174.0 134.0 171.2 133.0 169.0 135.1 165.5 143.5 158.2 145.5 157.7 152.0 158.7 157.5 153.0M202.0 174.5 199.5 180.2 193.2 184.0 187.8 193.0 187.6 196.5 188.4 199.0 193.8 204.5 195.3 207.0 195.2 210.0 193.0 214.4M271.0 169.6 266.5 169.6 262.5 168.2 254.5 160.1 252.0 160.2 249.5 162.0M246.2 155.5 249.5 153.6 256.0 154.2 264.0 153.0 267.0 153.6 270.0 156.8 274.1 165.0 273.8 168.0 271.0 169.6M226.0 181.1 222.5 180.5 225.2 174.5 224.5 170.5M90.5 175.5 89.9 175.5 90.8 173.5 93.0 171.8 104.0 170.4 104.7 172.0 102.0 180.0M262.5 180.7 269.5 176.1 273.0 175.9 274.3 177.0 274.2 182.0 271.4 188.0 271.9 191.0 268.0 195.0M110.5 184.2 116.0 183.6 121.5 185.4 122.8 187.0 123.2 189.5 122.7 191.5 121.5 192.5", "ARB_M": "M292.0 214.0 292.8 211.7 293.5 209.4 294.3 207.2 295.0 204.9 295.8 202.6 296.5 200.3 297.3 198.1 298.1 195.8 298.8 193.5 299.6 191.2 300.3 188.9M293.5 209.4 290.3 203.9M293.5 209.4 297.8 207.1M295.8 202.6 294.3 197.7M295.8 202.6 299.4 200.5M298.1 195.8 296.0 189.1M298.1 195.8 302.3 193.7M292.0 214.0 293.6 212.2 295.1 210.3 296.7 208.5 298.2 206.7 299.8 204.9 301.3 203.0 302.9 201.2 304.4 199.4 306.0 197.5 307.5 195.7 309.1 193.9 310.6 192.0 312.2 190.2 313.8 188.4 315.3 186.6M295.1 210.3 294.9 203.4M295.1 210.3 301.6 210.4M299.8 204.9 299.7 199.4M299.8 204.9 303.9 204.6M304.4 199.4 304.1 194.6M304.4 199.4 308.6 199.4M309.1 193.9 308.4 187.3M309.1 193.9 315.6 192.6M313.8 188.4 313.1 184.4M313.8 188.4 317.7 188.2M292.0 214.0 294.1 212.9 296.3 211.8 298.4 210.7 300.5 209.5 302.6 208.4 304.8 207.3 306.9 206.2 309.0 205.1 311.1 204.0 313.3 202.8 315.4 201.7 317.5 200.6 319.6 199.5 321.8 198.4 323.9 197.3 326.0 196.2 328.1 195.0 330.3 193.9 332.4 192.8 334.5 191.7 336.6 190.6 338.8 189.5M296.3 211.8 298.0 206.8M296.3 211.8 301.1 212.6M302.6 208.4 303.8 203.6M302.6 208.4 308.6 209.4M309.0 205.1 311.2 199.1M309.0 205.1 313.9 206.0M315.4 201.7 316.7 196.4M315.4 201.7 319.9 203.0M321.8 198.4 324.9 192.4M321.8 198.4 328.2 199.3M328.1 195.0 330.6 188.7M328.1 195.0 334.7 196.6M334.5 191.7 336.0 187.2M334.5 191.7 340.2 193.7M292.0 214.0 294.4 213.8 296.8 213.5 299.2 213.3 301.6 213.0 303.9 212.8 306.3 212.6 308.7 212.3 311.1 212.1 313.5 211.8 315.9 211.6 318.3 211.4 320.7 211.1 323.0 210.9 325.4 210.6 327.8 210.4 330.2 210.2 332.6 209.9 335.0 209.7 337.4 209.4 339.8 209.2 342.1 209.0 344.5 208.7 346.9 208.5 349.3 208.2 351.7 208.0 354.1 207.8 356.5 207.5 358.9 207.3 361.3 207.1 363.6 206.8M296.8 213.5 300.1 209.3M296.8 213.5 301.8 216.7M303.9 212.8 308.5 208.7M303.9 212.8 307.9 216.1M311.1 212.1 313.8 208.4M311.1 212.1 316.3 215.8M318.3 211.4 322.5 206.9M318.3 211.4 323.6 215.7M325.4 210.6 328.8 205.5M325.4 210.6 328.7 213.7M332.6 209.9 336.6 204.7M332.6 209.9 337.2 213.2M339.8 209.2 344.3 204.1M339.8 209.2 344.1 212.1M346.9 208.5 350.9 205.1M346.9 208.5 352.2 212.8M354.1 207.8 356.9 203.6M354.1 207.8 357.3 211.0M361.3 207.1 363.9 203.4M361.3 207.1 364.7 209.5M292.0 214.0 294.3 214.7 296.6 215.3 298.9 216.0 301.2 216.7 303.5 217.4 305.8 218.0 308.1 218.7 310.4 219.4 312.7 220.0 315.0 220.7 317.3 221.4 319.7 222.1 322.0 222.7 324.3 223.4 326.6 224.1 328.9 224.7 331.2 225.4 333.5 226.1 335.8 226.7 338.1 227.4 340.4 228.1 342.7 228.8 345.0 229.4 347.3 230.1 349.6 230.8 351.9 231.4 354.2 232.1M296.6 215.3 302.1 211.8M296.6 215.3 300.0 219.8M303.5 217.4 308.6 215.3M303.5 217.4 305.7 221.1M310.4 219.4 314.5 216.7M310.4 219.4 312.6 222.9M317.3 221.4 321.7 219.9M317.3 221.4 321.1 227.0M324.3 223.4 328.8 220.4M324.3 223.4 327.4 228.5M331.2 225.4 335.4 222.7M331.2 225.4 333.4 230.1M338.1 227.4 343.6 224.5M338.1 227.4 341.2 232.6M345.0 229.4 348.5 227.4M345.0 229.4 347.8 232.9M351.9 231.4 356.2 229.7M351.9 231.4 354.8 235.1M292.0 214.0 293.9 215.5 295.8 217.0 297.7 218.5 299.5 219.9 301.4 221.4 303.3 222.9 305.2 224.4 307.1 225.9 309.0 227.4 310.9 228.8 312.7 230.3 314.6 231.8 316.5 233.3 318.4 234.8 320.3 236.3 322.2 237.7 324.1 239.2M295.8 217.0 302.4 216.2M295.8 217.0 296.8 222.0M301.4 221.4 307.5 221.1M301.4 221.4 301.9 228.2M307.1 225.9 313.2 225.6M307.1 225.9 308.4 232.2M312.7 230.3 319.4 230.3M312.7 230.3 313.7 236.4M318.4 234.8 323.3 234.3M318.4 234.8 319.1 238.9M292.0 214.0 293.2 216.1 294.4 218.2 295.6 220.2 296.8 222.3 298.0 224.4 299.2 226.5 300.4 228.6 301.6 230.7 302.7 232.7 303.9 234.8 305.1 236.9M294.4 218.2 299.5 220.5M294.4 218.2 293.0 224.5M298.0 224.4 303.1 226.8M298.0 224.4 296.7 230.1M301.6 230.7 307.0 231.9M301.6 230.7 300.2 236.0", "FOL_M": "M300 222.0 C320 216.0 342 212.0 372 206.0M300 226.6 C320 220.6 342 216.6 372 210.6M300 231.2 C320 225.2 342 221.2 372 215.2M300 235.8 C320 229.8 342 225.8 372 219.8M300 240.4 C320 234.4 342 230.4 372 224.4M300 245.0 C320 239.0 342 235.0 372 229.0M300 249.6 C320 243.6 342 239.6 372 233.6M300 254.2 C320 248.2 342 244.2 372 238.2"};
+  function brainView(kind, keys) {
+    const B = BRAIN;
+    const lobe = (x, y, s, a) => `<text class="lobe" x="${x}" y="${y}"${a ? ` text-anchor="${a}"` : ''}>${t(s)}</text>`;
+    let body;
+    if (kind === 'L') {
+      body = `<defs><clipPath id="cbl-L"><path d="${B.CBL_L}"/></clipPath></defs>
+        <path class="stemf" d="${B.STM_L}"/>
+        <path class="stl" d="M266 224 C274 228 286 228 296 224"/><path class="stl" d="M272 242 C278 244 286 244 292 242"/>
+        <path class="cblf" d="${B.CBL_L}"/><path class="fol" clip-path="url(#cbl-L)" d="${B.FOL_L}"/><path class="cbl-edge" d="${B.CBL_L}"/>
+        <path class="ctx" d="${B.CER_L}"/><path class="gyr" d="${B.GYR_CER}"/>
+        <path class="ctx" d="${B.TMP_L}"/><path class="gyr" d="${B.GYR_TMP}"/>
+        <path class="sulc" d="M222 8 C216 36 210 58 214 82 C216 104 206 126 202 148"/>
+        <path class="sulc" d="M296 170 C299 160 302 152 306 142"/>
+        ${lobe(150, 124, 'lobo frontal', 'middle')}${lobe(306, 46, 'lobo parietal', 'middle')}${lobe(366, 160, 'occipital', 'end')}
+        ${lobe(180, 208, 'lobo temporal', 'middle')}${lobe(340, 226, 'cerebelo', 'middle')}${lobe(302, 256, 'tronco · bulbo')}`;
+    } else {
+      body = `<defs><clipPath id="cbl-M"><path d="${B.CBL_M}"/></clipPath></defs>
+        <path class="ctx" d="${B.OUT_M}"/><path class="gyr" d="${B.GYR_M}"/>
+        <path class="cing" d="${B.CING_M}"/>
+        <path class="ccf" d="${B.CC_M}"/>
+        <path class="stl" d="M176 124 C196 112 232 112 254 130"/>
+        <ellipse class="thal" cx="210" cy="132" rx="22" ry="12"/>
+        <path class="cblf" d="${B.CBL_M}"/><path class="fol" clip-path="url(#cbl-M)" d="${B.FOL_M}"/><path class="arb" d="${B.ARB_M}"/><path class="cbl-edge" d="${B.CBL_M}"/>
+        <path class="stemf" d="${B.STM_M}"/>
+        <path class="stl" d="M250 176 C256 190 256 204 250 214"/>
+        <path class="sulc" d="M322 62 C318 90 312 114 306 140"/><path class="sulc" d="M306 140 C330 138 354 134 376 128"/>
+        ${lobe(236, 72, 'giro do cíngulo', 'middle')}${lobe(212, 96, 'corpo caloso', 'middle')}${lobe(208, 136, 'tálamo', 'middle')}
+        ${lobe(234, 200, 'ponte', 'end')}${lobe(332, 248, 'cerebelo', 'middle')}${lobe(266, 256, 'tronco · bulbo')}`;
+    }
+    const pos = kind === 'L' ? POS_L : POS_M;
+    const regs = Object.entries(pos).map(([k, p]) => [k, { s: REG[k].s, e: p.slice(0, 4), deep: !!p[4] }]);
+    const labels = [];
+    for (const [k, r] of regs) {
+      const [cx, cy, rx, ry] = r.e, on = keys.includes(k);
+      if (!on) continue;
+      body += `<ellipse class="halo" cx="${cx}" cy="${cy}" rx="${rx + 9}" ry="${ry + 8}"/>`;
+      body += `<ellipse class="on${r.deep ? ' deep' : ''}" cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}"/>`;
+      if (on) labels.push([cx, cy, ry, r.s]);
+    }
+    // labels with simple vertical de-overlap
+    labels.sort((a, b) => a[1] - b[1]);
+    let lastY = -99;
+    for (const [cx, cy, ry, s] of labels) {
+      let ly = cy - ry - 6; if (ly - lastY < 13) ly = lastY + 13; lastY = ly;
+      body += `<text x="${cx}" y="${ly}" text-anchor="middle" style="paint-order:stroke;stroke:var(--surface);stroke-width:3px">${s}</text>`;
+    }
+    body += `<text class="vt" x="16" y="248">${t('← frente')}</text><text class="vh" x="14" y="-10">${t(kind === 'L' ? 'Vista lateral (hemisfério esquerdo)' : 'Vista medial (corte sagital)')}</text>`;
+    return `<svg class="brain" viewBox="0 -36 400 296" role="img" aria-label="${t(kind === 'L' ? 'Vista lateral' : 'Vista medial')} ${t('do cérebro com destaque para')} ${keys.map(short).join(', ')}">${body}</svg>`;
+  }
+
+  // ---------- situation illustrations ----------
+  function rng(seed) { let s = seed; return () => (s = (s * 16807) % 2147483647) / 2147483647; }
+  const ILL = {
+    semaforo: () => `<rect class="bg" width="320" height="180"/><path class="soft" d="M0 180 L132 96 L188 96 L320 180 Z"/>
+      <path d="M160 102 L160 180" style="stroke:var(--surface)" stroke-width="3" stroke-dasharray="10 9"/>
+      <rect class="ink" x="232" y="54" width="6" height="110"/><rect class="ink" x="214" y="16" width="42" height="100" rx="9"/>
+      <circle cx="235" cy="38" r="11" class="mut" opacity=".35"/><circle cx="235" cy="66" r="22" class="acc" opacity=".3"/><circle cx="235" cy="66" r="12" class="acc"/><circle cx="235" cy="94" r="11" class="mut" opacity=".35"/>
+      <rect class="lab" x="104" y="128" width="78" height="30" rx="9"/><rect class="card" x="118" y="118" width="48" height="16" rx="5"/><circle class="ink" cx="122" cy="160" r="7"/><circle class="ink" cx="166" cy="160" r="7"/>
+      <text class="t-big" x="18" y="34">${t('Frear ou passar?')}</text><text class="t-mut" x="18" y="52">${t('~300 ms para decidir')}</text>`,
+    rdm: () => { const r = rng(7); let d = ''; for (let i = 0; i < 70; i++) { const x = 40 + r() * 240, y = 30 + r() * 120; if (r() < .45) d += `<line x1="${x - 9}" y1="${y}" x2="${x}" y2="${y}" style="stroke:var(--accent-bright)" stroke-width="1.6"/>`; d += `<circle cx="${x}" cy="${y}" r="2.1" fill="#F2EEE6"/>`; }
+      return `<rect width="320" height="180" fill="#11151F"/>${d}<path d="M154 90 h12 M160 84 v12" stroke="#F2EEE6" stroke-width="2"/>
+      <text x="160" y="22" text-anchor="middle" fill="#C9CFDB" style="fill:#C9CFDB">${t('Para que lado os pontos se movem?')}</text><text x="30" y="168" fill="#C9CFDB" style="fill:#C9CFDB">${t('← tecla F')}</text><text x="290" y="168" text-anchor="end" style="fill:#C9CFDB">${t('tecla J →')}</text>`; },
+    expressoes: () => { const heads = [[64,74,'s'],[122,56,'n'],[198,56,'f'],[256,74,'n'],[160,150,'s']]; let h = '';
+      heads.forEach(([x, y, m]) => { h += `<circle cx="${x}" cy="${y}" r="17" class="vida" opacity=".85"/><circle cx="${x - 6}" cy="${y - 3}" r="2" class="ink"/><circle cx="${x + 6}" cy="${y - 3}" r="2" class="ink"/>`;
+        h += m === 's' ? `<path d="M${x - 6} ${y + 6} Q${x} ${y + 11} ${x + 6} ${y + 6}" class="ln" stroke-width="1.6"/>` : m === 'f' ? `<path d="M${x - 6} ${y + 9} Q${x} ${y + 4} ${x + 6} ${y + 9}" class="ln" stroke-width="1.6"/><path d="M${x - 9} ${y - 9} l6 2 M${x + 9} ${y - 9} l-6 2" class="ln" stroke-width="1.4"/>` : `<path d="M${x - 5} ${y + 7} h10" class="ln" stroke-width="1.6"/>`; });
+      return `<rect class="bg" width="320" height="180"/><ellipse class="card" cx="160" cy="108" rx="112" ry="34"/>${h}
+      <path class="card" d="M222 18 h82 a8 8 0 0 1 8 8 v22 a8 8 0 0 1 -8 8 h-60 l-12 10 l2 -10 h-12 a8 8 0 0 1 -8 -8 v-22 a8 8 0 0 1 8 -8 z"/><text x="263" y="42" text-anchor="middle">${t('Concordou?')}</text>`; },
+    iowa: () => { let c = ''; const L = ['A','B','C','D'], G = ['+100 / −1250','+100 / −1250','+50 / −250','+50 / −250'];
+      L.forEach((l, i) => { const x = 26 + i * 72; c += `<rect class="card" x="${x}" y="44" width="58" height="82" rx="7"/><path d="M${x + 8} ${54} l42 62 M${x + 50} ${54} l-42 62" class="lns" opacity=".35"/><text class="t-big" x="${x + 29}" y="92" text-anchor="middle">${l}</text><text class="t-mut" x="${x + 29}" y="144" text-anchor="middle">${G[i]}</text>`; });
+      return `<rect class="bg" width="320" height="180"/>${c}<text x="160" y="28" text-anchor="middle" class="t-big" style="font-size:16px">${t('Escolha um baralho')}</text><text class="t-mut" x="160" y="168" text-anchor="middle">${t('Saldo: R$ 2.000 · as regras não são informadas')}</text>`; },
+    ellsberg: () => { const jar = x => `<path class="card" d="M${x - 46} 46 h92 v6 c0 6 -8 8 -8 14 v70 a14 14 0 0 1 -14 14 h-48 a14 14 0 0 1 -14 -14 v-70 c0 -6 -8 -8 -8 -14 z"/>`;
+      let b = ''; for (let i = 0; i < 10; i++) { const cx = 64 + (i % 4) * 16 + (Math.floor(i / 4) % 2) * 8, cy = 132 - Math.floor(i / 4) * 16; b += `<circle cx="${cx}" cy="${cy}" r="7" class="${i % 2 ? 'ink' : 'acc'}"/>`; }
+      return `<rect class="bg" width="320" height="180"/>${jar(88)}${b}${jar(232)}<rect x="196" y="68" width="72" height="80" rx="10" class="mut" opacity=".55"/><text x="232" y="122" text-anchor="middle" class="t-big" style="font-size:40px;fill:var(--surface)">?</text>
+      <text x="88" y="32" text-anchor="middle">${t('Urna A: 50 / 50')}</text><text x="232" y="32" text-anchor="middle">${t('Urna B: proporção ?')}</text><text class="t-mut" x="160" y="172" text-anchor="middle">${t('Em qual urna você aposta?')}</text>`; },
+    ultimato: () => `<rect class="bg" width="320" height="180"/><rect class="card" x="36" y="16" width="248" height="148" rx="12"/>
+      <text x="160" y="42" text-anchor="middle" class="t-mut">${t('Proposta do outro jogador')}</text>
+      <text x="160" y="76" text-anchor="middle" class="t-big">${t('Você: R$ 2 · Ele: R$ 8')}</text>
+      <rect x="62" y="104" width="88" height="36" rx="18" class="vida"/><text x="106" y="127" text-anchor="middle" style="fill:#fff;font-weight:600">${t('Aceitar')}</text>
+      <rect x="170" y="104" width="88" height="36" rx="18" class="card"/><text x="214" y="127" text-anchor="middle" style="font-weight:600">${t('Recusar')}</text>`,
+    aposta: () => `<rect class="bg" width="320" height="180"/><rect class="card" x="20" y="18" width="280" height="144" rx="12"/>
+      <text x="160" y="50" text-anchor="middle" class="t-big">${t('Time A × Time B')}</text><text x="160" y="70" text-anchor="middle" class="t-mut">${t('Final · hoje, 21h')}</text>
+      ${[[t('Vitória A'),'2,10'],[t('Empate'),'3,40'],[t('Vitória B'),'3,25']].map(([l, o], i) => `<rect x="${36 + i * 86}" y="88" width="76" height="52" rx="8" class="${i === 0 ? 'acc' : 'soft'}"/><text x="${74 + i * 86}" y="108" text-anchor="middle" class="t-mut" style="fill:var(--ink)">${l}</text><text x="${74 + i * 86}" y="130" text-anchor="middle" style="font-weight:600;font-size:16px">${o}</text>`).join('')}`,
+    carreira: () => `<rect class="bg" width="320" height="180"/><path class="soft" d="M146 180 L156 120 L164 120 L174 180 Z"/>
+      <path class="soft" d="M156 122 L40 70 L48 64 L160 116 Z"/><path class="soft" d="M164 122 L280 70 L272 64 L160 116 Z"/><path class="soft" d="M157 118 L156 40 L164 40 L163 118 Z"/>
+      <rect class="ink" x="186" y="60" width="5" height="100"/>
+      <path class="card" d="M192 66 h82 l10 10 l-10 10 h-82 z"/><text x="232" y="81" text-anchor="middle">${t('Empresa')}</text>
+      <path class="card" d="M186 92 h-78 l-10 10 l10 10 h78 z"/><text x="142" y="107" text-anchor="middle">${t('Pesquisa')}</text>
+      <path class="card" d="M192 118 h96 l10 10 l-10 10 h-96 z"/><text x="242" y="133" text-anchor="middle">${t('Empreender')}</text>
+      <text class="t-big" x="18" y="32">${t('Qual caminho?')}</text><text class="t-mut" x="18" y="50">${t('Decisão difícil de reverter')}</text>`,
+    acoes: () => { const r = rng(11); let p = 100, c = '', l = ''; for (let i = 0; i < 18; i++) { const o = p, cl = o + (r() - 0.52) * 22, hi = Math.max(o, cl) + r() * 8, lo = Math.min(o, cl) - r() * 8, x = 28 + i * 15;
+        const yy = v => 175 - v * 1.1; c += `<line x1="${x}" y1="${yy(hi)}" x2="${x}" y2="${yy(lo)}" class="lns"/><rect x="${x - 5}" y="${yy(Math.max(o, cl))}" width="10" height="${Math.max(2, Math.abs(cl - o) * 1.1)}" class="${cl >= o ? 'vida' : 'acc'}"/>`; p = cl; }
+      for (let i = 1; i < 5; i++) l += `<line x1="18" x2="302" y1="${i * 34}" y2="${i * 34}" style="stroke:var(--grid)"/>`;
+      return `<rect class="bg" width="320" height="180"/>${l}${c}<rect class="card" x="210" y="12" width="96" height="30" rx="6"/><text x="258" y="32" text-anchor="middle" style="font-weight:600">IBOV −2,4%</text>`; },
+    diretoria: () => { let ch = ''; for (let i = 0; i < 6; i++) { ch += `<circle cx="${84 + i * 30}" cy="66" r="11" class="mut"/><circle cx="${84 + i * 30}" cy="146" r="11" class="mut"/>`; }
+      return `<rect class="bg" width="320" height="180"/><rect class="card" x="60" y="80" width="200" height="52" rx="26"/>${ch}<circle cx="46" cy="106" r="12" class="acc"/><circle cx="274" cy="106" r="11" class="mut"/>
+      <rect class="card" x="96" y="8" width="128" height="40" rx="6"/><path d="M106 38 L124 26 L138 34 L154 18 L170 30 L186 22 L200 36 L214 28" class="accs" stroke-width="2"/><text x="160" y="28" text-anchor="middle" class="t-big" style="font-size:22px;fill:var(--ink)">?</text>
+      <rect x="250" y="10" width="58" height="26" rx="13" class="ink"/><text x="279" y="28" text-anchor="middle" style="fill:var(--paper);font-weight:600">48 h</text>
+      <text class="t-mut" x="160" y="174" text-anchor="middle">${t('Investir tudo ou manter o que funciona?')}</text>`; },
+  };
+
+  // ---------- detail sheet ----------
+  const $ = id => document.getElementById(id);
+  function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+  function renderSheet() {
+    const it = ITEMS.find(i => i.id === selId);
+    if (!it) { sheet.hidden = true; sheet.innerHTML = ''; $('hint').hidden = false; return; }
+    $('hint').hidden = true;
+    const list = ITEMS.filter(i => shown[i.g]), idx = list.findIndex(i => i.id === it.id);
+    const prev = list[(idx - 1 + list.length) % list.length], next = list[(idx + 1) % list.length];
+    const keysL = it.r.filter(k => REG[k].v === 'L' || ['ofc','amy','fpc','v1'].includes(k));
+    const keysM = it.r.filter(k => REG[k].v === 'M' || ['ofc','amy','fpc','v1'].includes(k));
+    const views = [];
+    if (it.r.some(k => REG[k].v === 'L')) views.push(brainView('L', keysL));
+    if (it.r.some(k => REG[k].v === 'M')) views.push(brainView('M', keysM));
+    sheet.innerHTML = `<div class="sheet-in">
+      <div class="sheet-top">
+        <div><span class="grp"><span class="dot" style="color:var(${GROUPS[it.g].token});background:var(${GROUPS[it.g].token})"></span>${esc(GROUPS[it.g].name)}</span>
+        <h2>${esc(it.name)}</h2></div>
+        <button class="x" id="x-close" type="button" aria-label="${t('Fechar detalhe')}">×</button>
+      </div>
+      <figure class="figure"><svg class="ill" viewBox="0 0 320 180" role="img" aria-label="${t('Ilustração')}: ${esc(it.name)}">${ILL[it.fig]()}</svg>
+        <figcaption>${t('Ilustração esquemática da situação')}</figcaption></figure>
+      <p class="desc">${esc(it.d)}</p>
+      <div class="stats">
+        <div class="stat"><b>${t('Tipo')}</b><span>${word('x', it.x)}</span></div>
+        <div class="stat"><b>${t('Volatilidade')}</b><span>${word('y', it.y)}</span></div>
+        <div class="stat"><b>${t('Contexto')}</b><span>${word('z', it.z)}</span></div>
+        <div class="stat"><b>${t('Custo cognitivo')}</b><span>${costWord(it.c)}</span></div>
+      </div>
+      <h3 class="sec-t">${t('Rede cerebral envolvida')}</h3>
+      ${views.map(v => `<figure class="figure">${v}</figure>`).join('')}
+      <ul class="areas">${it.r.map(k => `<li><span class="nm"><b>${esc(REG[k].s)}</b>${esc(REG[k].n)}</span><a href="${REG[k].u}" target="_blank" rel="noopener">${t('Saiba mais ↗')}</a></li>`).join('')}</ul>
+      <p class="small">${t('Regiões profundas aparecem tracejadas. Links abrem a Wikipédia (em inglês).')}</p>
+      <div class="nav"><button class="btn" id="x-prev" type="button">← ${esc(prev.name)}</button><button class="btn" id="x-next" type="button">${esc(next.name)} →</button></div>
+    </div>`;
+    sheet.hidden = false; sheet.scrollTop = 0;
+    $('x-close').onclick = () => select(null);
+    $('x-prev').onclick = () => select(prev.id);
+    $('x-next').onclick = () => select(next.id);
+  }
+  function select(id) {
+    selId = id; tip.hidden = true;
+    renderSheet(); renderJump();
+    if (id && getComputedStyle(sheet).position !== 'absolute') sheet.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'nearest' });
+  }
+
+  // ---------- toolbar & strip ----------
+  function setAuto(v) { auto = v; $('b-auto').setAttribute('aria-pressed', String(v)); }
+  setAuto(auto);
+  $('b-auto').onclick = () => setAuto(!auto);
+  $('b-labels').onclick = () => { showLabels = !showLabels; $('b-labels').setAttribute('aria-pressed', String(showLabels)); };
+  $('b-areas').onclick = () => { showAreas = !showAreas; $('b-areas').setAttribute('aria-pressed', String(showAreas)); };
+  $('b-zone').onclick = () => { showZone = !showZone; $('b-zone').setAttribute('aria-pressed', String(showZone)); };
+  $('b-reset').onclick = () => { select(null); yaw = V0.yaw; pitch = V0.pitch; zoom = 1; vYaw = vPitch = 0; };
+  $('b-front').onclick = () => { setAuto(false); yaw = 0; pitch = 0.05; vYaw = vPitch = 0; };
+  $('b-zin').onclick = () => { zoom = clamp(zoom * 1.15, 0.5, 2.4); };
+  $('b-zout').onclick = () => { zoom = clamp(zoom / 1.15, 0.5, 2.4); };
+  $('b-full').onclick = () => {
+    try {
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+      else if (stage.requestFullscreen) stage.requestFullscreen().catch(() => {});
+    } catch (e) {}
+  };
+  function renderChips() {
+    const box = $('chips'); box.innerHTML = '';
+    Object.entries(GROUPS).forEach(([k, g]) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'chip'; b.setAttribute('aria-pressed', String(shown[k]));
+      const d = document.createElement('span'); d.className = 'dot'; d.style.color = `var(${g.token})`; d.style.background = `var(${g.token})`;
+      b.append(d, document.createTextNode(`${g.name} (${ITEMS.filter(i => i.g === k).length})`));
+      b.onclick = () => { shown[k] = !shown[k]; if (selId && !shown[ITEMS.find(i => i.id === selId).g]) select(null); renderChips(); renderJump(); };
+      box.appendChild(b);
+    });
+  }
+  function renderJump() {
+    const box = $('jump'); box.innerHTML = '';
+    ITEMS.filter(i => shown[i.g]).forEach(it => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'chip'; b.setAttribute('aria-current', String(it.id === selId));
+      const d = document.createElement('span'); d.className = 'dot'; d.style.color = `var(${GROUPS[it.g].token})`; d.style.background = `var(${GROUPS[it.g].token})`;
+      b.append(d, document.createTextNode(it.name));
+      b.onclick = () => select(it.id === selId ? null : it.id);
+      box.appendChild(b);
+    });
+  }
+  function renderGloss() {
+    const dl = $('gloss'); dl.innerHTML = ''; const used = new Set(ITEMS.flatMap(i => i.r));
+    Object.entries(REG).filter(([k]) => used.has(k)).sort((a, b) => a[1].s.localeCompare(b[1].s, lang))
+      .forEach(([, r]) => { const w = document.createElement('div'), dt = document.createElement('dt'), dd = document.createElement('dd'); dt.textContent = r.s; dd.textContent = r.n; w.append(dt, dd); dl.appendChild(w); });
+  }
+
+  // ---------- language ----------
+  const PT = {
+    items: Object.fromEntries(ITEMS.map(it => [it.id, [it.name, it.d]])),
+    groups: Object.fromEntries(Object.entries(GROUPS).map(([k, g]) => [k, g.name])),
+    axes: JSON.parse(JSON.stringify(AXES)),
+    reg: Object.fromEntries(Object.entries(REG).map(([k, r]) => [k, [r.s, r.n]])),
+  };
+  function applyLang(l) {
+    lang = l;
+    try { localStorage.setItem('matriz-lang', l); } catch (e) {}
+    const D = l === 'en' ? DATA_EN : PT;
+    ITEMS.forEach(it => { [it.name, it.d] = D.items[it.id]; });
+    Object.keys(GROUPS).forEach(k => { GROUPS[k].name = D.groups[k]; });
+    Object.keys(AXES).forEach(k => Object.assign(AXES[k], D.axes[k]));
+    Object.keys(REG).forEach(k => { [REG[k].s, REG[k].n] = D.reg[k]; });
+    document.documentElement.lang = l === 'en' ? 'en' : 'pt-BR';
+    document.title = t('Matriz da Decisão Humana');
+    document.querySelectorAll('[data-i18n]').forEach(el => { if (el.dataset.pt == null) el.dataset.pt = el.textContent.trim(); el.textContent = t(el.dataset.pt); });
+    document.querySelectorAll('[data-i18n-aria]').forEach(el => { if (el.dataset.ptAria == null) el.dataset.ptAria = el.getAttribute('aria-label'); el.setAttribute('aria-label', t(el.dataset.ptAria)); });
+    document.querySelectorAll('[data-i18n-html]').forEach(el => { if (el.dataset.ptHtml == null) el.dataset.ptHtml = el.innerHTML; el.innerHTML = l === 'en' ? EN_HTML[el.dataset.i18nHtml] : el.dataset.ptHtml; });
+    document.querySelectorAll('[data-lang]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === l)));
+    renderGloss(); renderChips(); renderJump(); renderSheet();
+  }
+  document.querySelectorAll('[data-lang]').forEach(b => { b.onclick = () => applyLang(b.dataset.lang); });
+
+  applyLang(lang);
+  resize();
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
