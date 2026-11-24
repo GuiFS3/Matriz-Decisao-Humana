@@ -61,7 +61,7 @@ Desenvolvido em outubro de 2026 como parte do Trabalho de Conclusão de Curso.
 
 ### Como citar
 
-> Freitas, G. da S. (2026). *Matriz da Decisão Humana* [Ferramenta interativa]. https://guifs3.github.io/Matriz-Decisao-Humana/
+> Freitas, G. S. (2026). *Matriz da Decisão Humana* [Ferramenta interativa]. https://guifs3.github.io/Matriz-Decisao-Humana/
 
 ---
 
@@ -119,4 +119,4 @@ Developed in October 2026 as part of the undergraduate thesis (TCC).
 
 ### How to cite
 
-> Freitas, G. da S. (2026). *Human Decision Matrix* [Interactive tool]. https://guifs3.github.io/Matriz-Decisao-Humana/
+> Freitas, G. S. (2026). *Human Decision Matrix* [Interactive tool]. https://guifs3.github.io/Matriz-Decisao-Humana/
